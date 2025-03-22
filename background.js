@@ -10,21 +10,38 @@ function startTimer() {
 
   intervalId = setInterval(() => {
     chrome.storage.local.get(['targetMinutes'], (result) => {
-        const target = result.targetMinutes || 30;
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        const remaining = target * 60 - elapsed;
-      
-        if (remaining >= 0) {
-          const min = Math.floor(remaining / 60);
-          chrome.action.setBadgeText({ text: `${min}m` });
-          chrome.action.setBadgeBackgroundColor({ color: "#4688F1" }); // normal
+      const targetMinutes = result.targetMinutes || 30;
+      const targetSeconds = targetMinutes * 60;
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = targetSeconds - elapsed;
+  
+      let badgeText = '';
+      let badgeColor = '#4688F1';
+  
+      if (remaining >= 0) {
+        if (remaining >= 60) {
+          badgeText = `${Math.ceil(remaining / 60)}m`;
         } else {
-          const overtime = Math.abs(Math.floor(remaining / 60));
-          chrome.action.setBadgeText({ text: `+${overtime}m` });
-          chrome.action.setBadgeBackgroundColor({ color: "#E74C3C" }); // overtime
+          badgeText = `${remaining}s`;
         }
-      });      
-  }, 1000);
+      } else {
+        const overtime = Math.abs(remaining);
+        badgeColor = '#E74C3C';
+  
+        if (overtime >= 60) {
+          badgeText = `+${Math.floor(overtime / 60)}m`;
+        } else {
+          badgeText = `+${overtime}s`;
+        }
+      }
+  
+      chrome.action.setBadgeText({ text: badgeText });
+      chrome.action.setBadgeBackgroundColor({ color: badgeColor });
+  
+      // delay 상태 저장
+      chrome.storage.local.set({ delaySeconds: Math.max(-remaining, 0) });
+    });
+  }, 1000);  
 }
 
 function pauseTimer() {

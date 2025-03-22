@@ -17,4 +17,4 @@ jobs:
         uses: crazy-max/ghaction-github-labeler@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          skip-delete: false  # 기존 라벨 유지하고 싶다면 true로 변경
+          skip-delete: true  # 기존 라벨 유지하고 싶다면 true로 변경

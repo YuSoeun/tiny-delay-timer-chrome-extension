@@ -10,25 +10,38 @@ function startTimer() {
 
   intervalId = setInterval(() => {
     chrome.storage.local.get(['targetMinutes'], (result) => {
-        const targetMinutes = result.targetMinutes || 30;
-        const targetSeconds = targetMinutes * 60;
-      
-        const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-        const delaySeconds = Math.max(elapsedSeconds - targetSeconds, 0);
-        
-        const badgeText = delaySeconds > 0
-          ? `+${Math.floor(delaySeconds / 60)}m`
-          : `${Math.ceil((targetSeconds - elapsedSeconds) / 60)}m`;
-      
-        const badgeColor = delaySeconds > 0 ? '#E74C3C' : '#4688F1';
-      
-        chrome.action.setBadgeText({ text: badgeText });
-        chrome.action.setBadgeBackgroundColor({ color: badgeColor });
-      
-        // 타이머 지연 시간 저장
-        currentDelay = delaySeconds;
-      });      
-  }, 1000);
+      const targetMinutes = result.targetMinutes || 30;
+      const targetSeconds = targetMinutes * 60;
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = targetSeconds - elapsed;
+  
+      let badgeText = '';
+      let badgeColor = '#4688F1';
+  
+      if (remaining >= 0) {
+        if (remaining >= 60) {
+          badgeText = `${Math.ceil(remaining / 60)}m`;
+        } else {
+          badgeText = `${remaining}s`;
+        }
+      } else {
+        const overtime = Math.abs(remaining);
+        badgeColor = '#E74C3C';
+  
+        if (overtime >= 60) {
+          badgeText = `+${Math.floor(overtime / 60)}m`;
+        } else {
+          badgeText = `+${overtime}s`;
+        }
+      }
+  
+      chrome.action.setBadgeText({ text: badgeText });
+      chrome.action.setBadgeBackgroundColor({ color: badgeColor });
+  
+      // delay 상태 저장
+      chrome.storage.local.set({ delaySeconds: Math.max(-remaining, 0) });
+    });
+  }, 1000);  
 }
 
 function pauseTimer() {

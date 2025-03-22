@@ -20,11 +20,11 @@ body:
     id: todo
     attributes:
       label: Todo
-      placeholder:
-        - label: Reproduce the bug
-        - label: Fix the issue
-        - label: Add test case
-        - label: Update related code
+      placeholder: |
+        - [ ] Reproduce the bug
+        - [ ] Fix the issue
+        - [ ] Add test case
+        - [ ] Update related code
     validations:
       required: false
 

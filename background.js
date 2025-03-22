@@ -54,16 +54,13 @@ function saveState() {
 function startTimer(targetMinutes = null) {
     if (timerState.isRunning) return;
 
-    if (targetMinutes !== null) {
-        timerState.activeTargetMinutes = targetMinutes;
-    }
-
     if (timerState.pausedTime) {
         // 일시정지 상태에서 재시작
         timerState.startTime += Date.now() - timerState.pausedTime;
         timerState.pausedTime = null;
-    } else {
+    } else if (targetMinutes !== null) {
         // 새 타이머 시작
+        timerState.activeTargetMinutes = targetMinutes; // 리셋 후 실행 시 targetTime 값 사용
         timerState.startTime = Date.now();
     }
 
@@ -86,7 +83,7 @@ function resetTimer() {
     timerState.isRunning = false;
     timerState.startTime = null;
     timerState.pausedTime = null;
-    timerState.activeTargetMinutes = 30;
+    timerState.activeTargetMinutes = 30; // 기본값으로 초기화
     clearInterval(timerState.intervalId);
     chrome.action.setBadgeText({ text: "" });
     saveState();

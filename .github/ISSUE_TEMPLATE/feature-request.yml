@@ -16,15 +16,17 @@ body:
     validations:
       required: true
 
-  - type: checkboxes
+  - type: textarea
     id: todo
     attributes:
       label: Todo
-      options:
-        - label: Implement core logic
-        - label: Update badge text
-        - label: Write tests
-        - label: Update documentation
+      placeholder: |
+        - [ ] Implement core logic
+        - [ ] Update badge text
+        - [ ] Write tests
+        - [ ] Update documentation
+    validations:
+      required: false
 
   - type: textarea
     id: etc

@@ -16,15 +16,17 @@ body:
     validations:
       required: true
 
-  - type: checkboxes
+  - type: textarea
     id: todo
     attributes:
       label: Todo
-      options:
+      placeholder:
         - label: Reproduce the bug
         - label: Fix the issue
         - label: Add test case
         - label: Update related code
+    validations:
+      required: false
 
   - type: textarea
     id: etc

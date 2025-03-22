@@ -1,4 +1,4 @@
-# BOJ Delay Timer – Chrome Extension
+# Tiny Delay Timer – Chrome Extension
 
 A minimal Chrome extension timer for Baekjoon with delay time tracking.  
 Shows elapsed and overtime directly on the icon badge.

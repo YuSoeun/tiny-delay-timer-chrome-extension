@@ -1,0 +1,34 @@
+name: Feature request
+description: Suggest or plan a new feature
+labels: [feat]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        👇 Please describe the feature you'd like to implement.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      placeholder: e.g. Add delay time display when target time is exceeded
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: todo
+    attributes:
+      label: Todo
+      options:
+        - label: Implement core logic
+        - label: Update badge text
+        - label: Write tests
+        - label: Update documentation
+
+  - type: textarea
+    id: etc
+    attributes:
+      label: ETC
+      description: Additional notes, concerns, or links
+      placeholder: Anything else worth noting?

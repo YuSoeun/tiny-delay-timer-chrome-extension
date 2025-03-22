@@ -1,0 +1,19 @@
+- name: api
+  color: "1D76DB"
+  description: "Changes related to API design or functionality"
+
+- name: docs
+  color: "F9D0C4"
+  description: "Documentation updates and improvements"
+
+- name: feat
+  color: "2ECC40"
+  description: "Addition of a new feature"
+
+- name: fix
+  color: "E74C3C"
+  description: "Bug fixes and patches"
+
+- name: refactor
+  color: "9B59B6"
+  description: "Refactoring code without changing functionality"

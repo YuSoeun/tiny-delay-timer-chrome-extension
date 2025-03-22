@@ -1,0 +1,20 @@
+# .github/workflows/labels.yml
+name: Sync GitHub Labels
+
+on:
+  push:
+    paths:
+      - ".github/labels.yml"
+
+jobs:
+  sync-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Sync labels
+        uses: crazy-max/ghaction-github-labeler@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          skip-delete: false  # 기존 라벨 유지하고 싶다면 true로 변경

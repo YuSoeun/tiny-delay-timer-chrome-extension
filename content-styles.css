@@ -1,0 +1,89 @@
+.boj-timer-overlay {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: move;
+    user-select: none;
+    transition: opacity 0.2s ease;
+}
+
+.boj-timer-overlay:hover {
+    opacity: 1;
+}
+
+.boj-timer-content {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 6px 12px;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    align-items: center;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+    backdrop-filter: blur(4px);
+    opacity: 0.85;
+    transition: all 0.2s ease;
+}
+
+.boj-timer-content:hover {
+    opacity: 1;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.boj-timer-content.hidden {
+    display: none;
+}
+
+.boj-timer-time {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.boj-timer-elapsed {
+    color: #3A4799;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: -0.3px;
+}
+
+.boj-timer-delay {
+    color: #4B5563;
+    font-size: 13px;
+    letter-spacing: -0.3px;
+    margin-left: 2px;
+}
+
+.boj-timer-delay.delayed {
+    color: #dc2626;
+    font-weight: 500;
+}
+
+.boj-timer-toggle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+    background: rgba(255, 255, 255, 0.95);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+}
+
+.boj-timer-toggle:hover {
+    background: #f8f9ff;
+    transform: scale(1.05);
+}
+
+.boj-timer-icon {
+    font-size: 14px;
+    opacity: 0.8;
+}

@@ -6,6 +6,13 @@
     "permissions": [
         "storage"
     ],
+    "content_scripts": [
+        {
+            "matches": ["https://www.acmicpc.net/*"],
+            "css": ["content-styles.css"],
+            "js": ["content-script.js"]
+        }
+    ],
     "action": {
         "default_popup": "popup.html",
         "default_icon": {

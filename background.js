@@ -90,8 +90,30 @@ function startTimer(fromSavedState = false) {
 
             chrome.action.setBadgeText({ text: badgeText });
             chrome.action.setBadgeBackgroundColor({ color: badgeColor });
+
+            // Send update to content script
+            chrome.tabs.query({url: "https://www.acmicpc.net/*"}, (tabs) => {
+                tabs.forEach(tab => {
+                    const progress = Math.min((elapsed / targetSeconds) * 100, 100);
+                    const delayProgress = remaining < 0 ? Math.min((Math.abs(remaining) / targetSeconds) * 100, 100) : 0;
+                    
+                    chrome.tabs.sendMessage(tab.id, {
+                        type: 'timerUpdate',
+                        elapsed: formatTime(elapsed),
+                        delay: remaining < 0 ? Math.abs(remaining) : 0,
+                        progress,
+                        delayProgress
+                    });
+                });
+            });
         });
     }, 1000);
+}
+
+function formatTime(seconds) {
+    const min = Math.floor(seconds / 60);
+    const sec = seconds % 60;
+    return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 }
 
 function pauseTimer() {

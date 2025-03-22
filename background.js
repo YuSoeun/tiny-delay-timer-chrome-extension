@@ -9,11 +9,21 @@ function startTimer() {
   startTime = Date.now() - pausedTime;
 
   intervalId = setInterval(() => {
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    const minutes = Math.floor(elapsed / 60);
-    const text = `${minutes}m`;
-    chrome.action.setBadgeText({ text });
-    chrome.action.setBadgeBackgroundColor({ color: "#4688F1" });
+    chrome.storage.local.get(['targetMinutes'], (result) => {
+        const target = result.targetMinutes || 30;
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const remaining = target * 60 - elapsed;
+      
+        if (remaining >= 0) {
+          const min = Math.floor(remaining / 60);
+          chrome.action.setBadgeText({ text: `${min}m` });
+          chrome.action.setBadgeBackgroundColor({ color: "#4688F1" }); // normal
+        } else {
+          const overtime = Math.abs(Math.floor(remaining / 60));
+          chrome.action.setBadgeText({ text: `+${overtime}m` });
+          chrome.action.setBadgeBackgroundColor({ color: "#E74C3C" }); // overtime
+        }
+      });      
   }, 1000);
 }
 

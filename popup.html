@@ -2,14 +2,34 @@
 <html>
 <head>
   <style>
-    body { font-family: sans-serif; min-width: 200px; padding: 10px; }
-    button { margin: 5px 0; width: 100%; }
+    body {
+      font-family: sans-serif;
+      min-width: 200px;
+      padding: 10px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    button {
+      margin: 5px 0;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
+  <label for="targetTime">Target Time (minutes)</label>
+  <input type="number" id="targetTime" min="1" value="30" />
+
   <button id="start">Start</button>
   <button id="pause">Pause</button>
   <button id="reset">Reset</button>
+
   <script src="popup.js"></script>
 </body>
 </html>

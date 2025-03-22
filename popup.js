@@ -98,7 +98,7 @@ function handleReset() {
     clearInterval(elapsedInterval);
     clearInterval(delayInterval);
     updateDelayDisplay(0);
-    document.getElementById('elapsed').textContent = '--:--';
+    document.getElementById('elapsed').textContent = '00:00';
     document.getElementById('elapsed-progress').style.width = '0%';
     document.getElementById('delay-progress').style.width = '0%';
 }
@@ -185,13 +185,15 @@ function formatTime(seconds) {
 }
 
 function updateDelayDisplay(delaySeconds) {
+    // 딜레이가 0이거나 undefined일 때는 '00:00' 표시
     const delayText = delaySeconds > 0 ? `+${formatTime(delaySeconds)}` : '00:00';
     document.getElementById('delay').textContent = delayText;
 
     // 딜레이 프로그레스 바 업데이트
     chrome.storage.local.get(['targetMinutes'], (result) => {
         const targetSeconds = (result.targetMinutes || 30) * 60;
-        const progress = Math.min((delaySeconds / targetSeconds) * 100, 100);
+        // 딜레이가 0이면 프로그레스바도 0
+        const progress = delaySeconds > 0 ? Math.min((delaySeconds / targetSeconds) * 100, 100) : 0;
         document.getElementById('delay-progress').style.width = `${progress}%`;
     });
 }
@@ -231,7 +233,7 @@ function initializeTimerState() {
                 document.getElementById('delay').textContent = delay > 0 ? `+${formatTime(delay)}` : '00:00';
             });
         } else {
-            document.getElementById('elapsed').textContent = '--:--';
+            document.getElementById('elapsed').textContent = '00:00';
             document.getElementById('elapsed-progress').style.width = '0%';
             document.getElementById('delay-progress').style.width = '0%';
         }

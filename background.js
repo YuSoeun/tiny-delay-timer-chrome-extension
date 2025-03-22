@@ -40,11 +40,14 @@ async function loadState() {
 }
 
 function saveState() {
-    chrome.storage.local.set({
+    const state = {
         isRunning: timerState.isRunning,
         startTime: timerState.startTime,
-        pausedTime: timerState.pausedTime
-    });
+        pausedTime: timerState.pausedTime,
+        // 타이머 상태와 함께 targetMinutes도 저장
+        targetMinutes: timerState.targetMinutes
+    };
+    chrome.storage.local.set(state);
 }
 
 function startTimer(fromSavedState = false) {
@@ -52,7 +55,13 @@ function startTimer(fromSavedState = false) {
     
     timerState.isRunning = true;
     if (!fromSavedState) {
-        timerState.startTime = Date.now() - timerState.pausedTime;
+        // 이미 저장된 pausedTime이 있다면 그만큼 시작 시간을 조정
+        if (timerState.pausedTime > 0) {
+            timerState.startTime = Date.now() - timerState.pausedTime;
+        } else {
+            timerState.startTime = Date.now();
+        }
+        chrome.storage.local.set({ delaySeconds: 0 });
     }
     
     saveState();
@@ -73,8 +82,6 @@ function startTimer(fromSavedState = false) {
                 } else {
                     badgeText = `${remaining}s`;
                 }
-                // 남은 시간이 있을 때는 딜레이를 0으로 설정
-                chrome.storage.local.set({ delaySeconds: 0 });
             } else {
                 const delaySeconds = Math.abs(remaining);
                 badgeColor = '#E74C3C';
@@ -84,7 +91,7 @@ function startTimer(fromSavedState = false) {
                 } else {
                     badgeText = `+${delaySeconds}s`;
                 }
-                // 초과 시간일 때만 딜레이 설정
+                // 딜레이가 있을 때만 delaySeconds 업데이트
                 chrome.storage.local.set({ delaySeconds });
             }
 

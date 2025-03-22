@@ -1,10 +1,24 @@
+// 전역 상태 보완
+let timerState = {
+    targetMinutes: 30,
+    startTime: null,
+    pauseStartTime: null,
+    totalPauseDuration: 0,
+    elapsedInterval: null,
+    delayInterval: null,
+    activeTargetMinutes: 30  // 현재 실행 중인 타이머의 목표 시간
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         // 초기 상태 로드
         const targetTimeInput = document.getElementById('targetTime');
         const result = await chrome.storage.local.get(['targetMinutes']);
+        timerState.targetMinutes = result.targetMinutes || 30;
         if (targetTimeInput) {
             targetTimeInput.value = result.targetMinutes || 30;
+            // 초기 total time 설정
+            document.getElementById('total-time').textContent = formatTime((result.targetMinutes || 30) * 60);
         }
 
         // delay 시간 불러오기
@@ -75,28 +89,61 @@ function setupEventListeners() {
 function handleTargetTimeChange(e) {
     const value = parseInt(e.target.value, 10);
     if (!isNaN(value) && value > 0) {
+        // 값을 저장하되 실행 중인 타이머에는 영향을 주지 않음
+        timerState.targetMinutes = value;
         chrome.storage.local.set({ targetMinutes: value });
+        
+        // 타이머가 실행 중이지 않을 때만 total-time 업데이트
+        if (!timerState.startTime) {
+            document.getElementById('total-time').textContent = formatTime(value * 60);
+        }
     }
 }
 
 function handleStart() {
-    // 타이머 시작 요청과 동시에 UI 즉시 업데이트
     const now = Date.now();
+    
+    if (timerState.pauseStartTime) {
+        // 일시정지 상태에서 재시작하는 경우
+        timerState.totalPauseDuration += (now - timerState.pauseStartTime);
+        timerState.pauseStartTime = null;
+    } else if (!timerState.startTime) {
+        // 처음 시작하는 경우
+        timerState.startTime = now;
+        timerState.totalPauseDuration = 0;
+        // 시작할 때 현재 설정된 목표 시간을 활성 목표 시간으로 설정
+        timerState.activeTargetMinutes = timerState.targetMinutes;
+        document.getElementById('total-time').textContent = formatTime(timerState.activeTargetMinutes * 60);
+    }
+
     updateElapsed(now);
     startDelayUpdate();
     chrome.runtime.sendMessage({ action: 'startTimer' });
 }
 
+// 전역 변수로 일시정지 시간 추적
+let timerPausedDuration = 0;
+let pausedTime = null;
+
 function handlePause() {
     chrome.runtime.sendMessage({ action: 'pauseTimer' });
-    clearInterval(elapsedInterval);
-    clearInterval(delayInterval);
+    clearInterval(timerState.elapsedInterval);
+    clearInterval(timerState.delayInterval);
+    timerState.pauseStartTime = Date.now();
 }
 
 function handleReset() {
     chrome.runtime.sendMessage({ action: 'resetTimer' });
-    clearInterval(elapsedInterval);
-    clearInterval(delayInterval);
+    clearInterval(timerState.elapsedInterval);
+    clearInterval(timerState.delayInterval);
+    timerState = {
+        ...timerState,
+        startTime: null,
+        pauseStartTime: null,
+        totalPauseDuration: 0
+    };
+    timerState.activeTargetMinutes = timerState.targetMinutes;  // 리셋 시 목표 시간 동기화
+    document.getElementById('total-time').textContent = formatTime(timerState.targetMinutes * 60);
     updateDelayDisplay(0);
     document.getElementById('elapsed').textContent = '00:00';
     document.getElementById('elapsed-progress').style.width = '0%';
@@ -131,6 +178,8 @@ function handleSavePresets() {
 function handlePresetClick() {
     const time = this.dataset.time;
     document.getElementById('targetTime').value = time;
+    // 프리셋 버튼 클릭 시에도 total time은 업데이트하지 않고 저장만 함
+    chrome.storage.local.set({ targetMinutes: parseInt(time, 10) });
 
     // Remove active class from all preset buttons
     document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
@@ -150,32 +199,24 @@ function updatePresetButtons(presets) {
     });
 }
 
-let elapsedInterval = null;
-
-function updateElapsed(startTime) {
-    clearInterval(elapsedInterval);
-
-    function format(sec) {
-        const min = Math.floor(sec / 60);
-        const s = sec % 60;
-        return `${String(min).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    }
+function updateElapsed(now) {
+    clearInterval(timerState.elapsedInterval);
 
     function update() {
-        const now = Date.now();
-        const elapsedSec = Math.floor((now - startTime) / 1000);
-        document.getElementById('elapsed').textContent = format(elapsedSec);
-
-        // 프로그레스 바 업데이트 로직 추가
-        chrome.storage.local.get(['targetMinutes'], (result) => {
-            const targetSeconds = (result.targetMinutes || 30) * 60;
-            const progress = Math.min((elapsedSec / targetSeconds) * 100, 100);
-            document.getElementById('elapsed-progress').style.width = `${progress}%`;
-        });
+        const currentTime = Date.now();
+        const effectiveElapsed = currentTime - timerState.startTime - timerState.totalPauseDuration;
+        const elapsedSec = Math.floor(effectiveElapsed / 1000);
+        // 활성 목표 시간 사용
+        const targetSeconds = timerState.activeTargetMinutes * 60;
+        const remainingSec = Math.max(targetSeconds - elapsedSec, 0);
+        
+        document.getElementById('elapsed').textContent = formatTime(remainingSec);
+        const progress = Math.max((remainingSec / targetSeconds) * 100, 0);
+        document.getElementById('elapsed-progress').style.width = `${progress}%`;
     }
 
-    update(); // 즉시 표시
-    elapsedInterval = setInterval(update, 1000);
+    update();
+    timerState.elapsedInterval = setInterval(update, 1000);
 }
 
 function formatTime(seconds) {
@@ -185,14 +226,14 @@ function formatTime(seconds) {
 }
 
 function updateDelayDisplay(delaySeconds) {
-    // 딜레이가 0이거나 undefined일 때는 '00:00' 표시
+    const delayEl = document.getElementById('delay');
     const delayText = delaySeconds > 0 ? `+${formatTime(delaySeconds)}` : '00:00';
-    document.getElementById('delay').textContent = delayText;
+    delayEl.textContent = delayText;
+    delayEl.classList.toggle('delayed', delaySeconds > 0);
 
-    // 딜레이 프로그레스 바 업데이트
     chrome.storage.local.get(['targetMinutes'], (result) => {
         const targetSeconds = (result.targetMinutes || 30) * 60;
-        // 딜레이가 0이면 프로그레스바도 0
+        // 딜레이는 왼쪽에서 오른쪽으로 증가
         const progress = delaySeconds > 0 ? Math.min((delaySeconds / targetSeconds) * 100, 100) : 0;
         document.getElementById('delay-progress').style.width = `${progress}%`;
     });
@@ -202,8 +243,8 @@ function updateDelayDisplay(delaySeconds) {
 let delayInterval = null;
 
 function startDelayUpdate() {
-    clearInterval(delayInterval);
-    delayInterval = setInterval(() => {
+    clearInterval(timerState.delayInterval);
+    timerState.delayInterval = setInterval(() => {
         chrome.storage.local.get(['delaySeconds'], (result) => {
             updateDelayDisplay(result.delaySeconds || 0);
         });
@@ -214,28 +255,30 @@ function startDelayUpdate() {
 function initializeTimerState() {
     chrome.runtime.sendMessage({ action: 'getStatus' }, (res) => {
         if (res?.isRunning && res?.startTime) {
-            updateElapsed(res.startTime);
-            startDelayUpdate();
+            timerState.startTime = res.startTime;
+            // activeTargetMinutes 복원
+            chrome.storage.local.get(['targetMinutes'], (result) => {
+                timerState.activeTargetMinutes = result.targetMinutes || 30;
+                updateElapsed(Date.now());
+                startDelayUpdate();
+            });
         } else if (res?.pausedTime) {
             // 일시 정지 상태일 때는 마지막 시간을 표시
             const elapsedSec = Math.floor((res.pausedTime) / 1000);
-            document.getElementById('elapsed').textContent = formatTime(elapsedSec);
-            
-            // 프로그레스 바도 마지막 상태로 유지
             chrome.storage.local.get(['targetMinutes', 'delaySeconds'], (result) => {
-                const targetSeconds = (result.targetMinutes || 30) * 60;
+                timerState.activeTargetMinutes = result.targetMinutes || 30;
+                const targetSeconds = timerState.activeTargetMinutes * 60;
+                document.getElementById('elapsed').textContent = formatTime(Math.max(targetSeconds - elapsedSec, 0));
+                document.getElementById('total-time').textContent = formatTime(targetSeconds);
+
                 const elapsedProgress = Math.min((elapsedSec / targetSeconds) * 100, 100);
-                document.getElementById('elapsed-progress').style.width = `${elapsedProgress}%`;
+                document.getElementById('elapsed-progress').style.width = `${Math.max(100 - elapsedProgress, 0)}%`;
 
                 const delay = result.delaySeconds || 0;
                 const delayProgress = Math.min((delay / targetSeconds) * 100, 100);
                 document.getElementById('delay-progress').style.width = `${delayProgress}%`;
                 document.getElementById('delay').textContent = delay > 0 ? `+${formatTime(delay)}` : '00:00';
             });
-        } else {
-            document.getElementById('elapsed').textContent = '00:00';
-            document.getElementById('elapsed-progress').style.width = '0%';
-            document.getElementById('delay-progress').style.width = '0%';
         }
     });
 }
@@ -243,7 +286,8 @@ function initializeTimerState() {
 // 메시지 리스너 추가
 chrome.runtime.onMessage.addListener((message) => {
     if (message.action === 'timerStarted') {
-        updateElapsed(message.startTime);
+        timerState.startTime = message.startTime;
+        updateElapsed(Date.now());
         startDelayUpdate();
     }
 });

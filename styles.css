@@ -60,9 +60,51 @@ body {
 .progress-label {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 4px;
+  align-items: baseline;
+  margin-bottom: 6px;
   font-size: 12px;
   font-weight: 500;
+}
+
+.time-display {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: 13px;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.2px;
+}
+
+#elapsed, .delay-time {
+  font-weight: 600;
+  min-width: 46px;
+  text-align: right;
+}
+
+#elapsed {
+  color: var(--primary-color);
+}
+
+.delay-time {
+  color: var(--text-secondary);
+}
+
+.delay-time.delayed {
+  color: #dc2626;
+}
+
+.time-separator {
+  color: var(--text-secondary);
+  font-weight: normal;
+  opacity: 0.5;
+  margin: 0 1px;
+}
+
+.total-time {
+  color: var(--text-secondary);
+  font-size: 12px;
+  opacity: 0.8;
 }
 
 .progress-bar {
@@ -71,6 +113,7 @@ body {
   background-color: var(--background);
   border-radius: 3px;
   overflow: hidden;
+  position: relative;
 }
 
 .progress {
@@ -83,10 +126,18 @@ body {
 
 #elapsed-progress {
   background-color: var(--primary-color);
+  position: absolute;
+  right: 0;
+  left: auto;
+  transform-origin: right;
 }
 
 #delay-progress {
   background-color: #dc2626;
+  position: absolute;
+  left: 0;
+  right: auto;
+  transform-origin: left;
 }
 
 .input-group {

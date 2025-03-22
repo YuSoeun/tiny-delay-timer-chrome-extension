@@ -10,19 +10,23 @@ function startTimer() {
 
   intervalId = setInterval(() => {
     chrome.storage.local.get(['targetMinutes'], (result) => {
-        const target = result.targetMinutes || 30;
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        const remaining = target * 60 - elapsed;
+        const targetMinutes = result.targetMinutes || 30;
+        const targetSeconds = targetMinutes * 60;
       
-        if (remaining >= 0) {
-          const min = Math.floor(remaining / 60);
-          chrome.action.setBadgeText({ text: `${min}m` });
-          chrome.action.setBadgeBackgroundColor({ color: "#4688F1" }); // normal
-        } else {
-          const overtime = Math.abs(Math.floor(remaining / 60));
-          chrome.action.setBadgeText({ text: `+${overtime}m` });
-          chrome.action.setBadgeBackgroundColor({ color: "#E74C3C" }); // overtime
-        }
+        const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+        const delaySeconds = Math.max(elapsedSeconds - targetSeconds, 0);
+        
+        const badgeText = delaySeconds > 0
+          ? `+${Math.floor(delaySeconds / 60)}m`
+          : `${Math.ceil((targetSeconds - elapsedSeconds) / 60)}m`;
+      
+        const badgeColor = delaySeconds > 0 ? '#E74C3C' : '#4688F1';
+      
+        chrome.action.setBadgeText({ text: badgeText });
+        chrome.action.setBadgeBackgroundColor({ color: badgeColor });
+      
+        // 타이머 지연 시간 저장
+        currentDelay = delaySeconds;
       });      
   }, 1000);
 }

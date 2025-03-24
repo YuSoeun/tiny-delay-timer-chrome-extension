@@ -6,7 +6,8 @@ self.addEventListener('activate', (event) => {
 const timerState = {
     startTime: null,
     isRunning: false,
-    pausedTime: 0,
+    pausedTime: null,
+    activeTargetMinutes: 30, // 실행 중인 타이머의 목표 시간
     intervalId: null
 };
 
@@ -20,18 +21,20 @@ async function loadState() {
             'isRunning',
             'startTime',
             'pausedTime',
-            'targetMinutes'
+            'activeTargetMinutes'
         ]);
 
         if (state.isRunning && state.startTime) {
             timerState.startTime = state.startTime;
             timerState.isRunning = true;
-            timerState.pausedTime = 0;
+            timerState.pausedTime = null;
+            timerState.activeTargetMinutes = state.activeTargetMinutes || 30;
             startTimer(true); // true: 저장된 상태에서 시작
         } else if (state.pausedTime) {
             timerState.startTime = state.startTime;
             timerState.pausedTime = state.pausedTime;
             timerState.isRunning = false;
+            timerState.activeTargetMinutes = state.activeTargetMinutes || 30;
         }
     } catch (error) {
         console.error('Failed to load state:', error);
@@ -43,84 +46,95 @@ function saveState() {
     chrome.storage.local.set({
         isRunning: timerState.isRunning,
         startTime: timerState.startTime,
-        pausedTime: timerState.pausedTime
+        pausedTime: timerState.pausedTime,
+        activeTargetMinutes: timerState.activeTargetMinutes
     });
 }
 
-function startTimer(fromSavedState = false) {
+function startTimer(targetMinutes = null) {
     if (timerState.isRunning) return;
-    
-    timerState.isRunning = true;
-    if (!fromSavedState) {
-        timerState.startTime = Date.now() - timerState.pausedTime;
+
+    if (timerState.pausedTime) {
+        // 일시정지 상태에서 재시작
+        timerState.startTime += Date.now() - timerState.pausedTime;
+        timerState.pausedTime = null;
+    } else if (targetMinutes !== null) {
+        // 새 타이머 시작
+        timerState.activeTargetMinutes = targetMinutes; // 리셋 후 실행 시 targetTime 값 사용
+        timerState.startTime = Date.now();
     }
-    
+
+    timerState.isRunning = true;
     saveState();
 
-    timerState.intervalId = setInterval(() => {
-        chrome.storage.local.get(['targetMinutes'], (result) => {
-            const targetMinutes = result.targetMinutes || 30;
-            const targetSeconds = targetMinutes * 60;
-            const elapsed = Math.floor((Date.now() - timerState.startTime) / 1000);
-            const remaining = targetSeconds - elapsed;
-
-            let badgeText = '';
-            let badgeColor = '#4688F1';
-
-            if (remaining >= 0) {
-                if (remaining >= 60) {
-                    badgeText = `${Math.ceil(remaining / 60)}m`;
-                } else {
-                    badgeText = `${remaining}s`;
-                }
-                // 남은 시간이 있을 때는 딜레이를 0으로 설정
-                chrome.storage.local.set({ delaySeconds: 0 });
-            } else {
-                const delaySeconds = Math.abs(remaining);
-                badgeColor = '#E74C3C';
-
-                if (delaySeconds >= 60) {
-                    badgeText = `+${Math.floor(delaySeconds / 60)}m`;
-                } else {
-                    badgeText = `+${delaySeconds}s`;
-                }
-                // 초과 시간일 때만 딜레이 설정
-                chrome.storage.local.set({ delaySeconds });
-            }
-
-            chrome.action.setBadgeText({ text: badgeText });
-            chrome.action.setBadgeBackgroundColor({ color: badgeColor });
-        });
-    }, 1000);
+    timerState.intervalId = setInterval(updateBadge, 1000);
 }
 
 function pauseTimer() {
     if (!timerState.isRunning) return;
+
     timerState.isRunning = false;
+    timerState.pausedTime = Date.now();
     clearInterval(timerState.intervalId);
-    timerState.pausedTime = Date.now() - timerState.startTime;
     saveState();
 }
 
 function resetTimer() {
     timerState.isRunning = false;
     timerState.startTime = null;
-    timerState.pausedTime = 0;
+    timerState.pausedTime = null;
+    timerState.activeTargetMinutes = 30; // 기본값으로 초기화
     clearInterval(timerState.intervalId);
     chrome.action.setBadgeText({ text: "" });
     saveState();
 }
 
+function updateBadge() {
+    const now = Date.now();
+    const elapsed = Math.floor((now - timerState.startTime) / 1000);
+    const targetSeconds = timerState.activeTargetMinutes * 60;
+    const remaining = targetSeconds - elapsed;
+
+    let badgeText = '';
+    let badgeColor = '#4688F1';
+
+    if (remaining >= 0) {
+        badgeText = remaining >= 60 ? `${Math.ceil(remaining / 60)}m` : `${Math.ceil(remaining)}s`; // 반올림
+    } else {
+        const delaySeconds = Math.abs(remaining);
+        badgeText = delaySeconds >= 60 ? `+${Math.ceil(delaySeconds / 60)}m` : `+${Math.ceil(delaySeconds)}s`; // 반올림
+        badgeColor = '#E74C3C';
+    }
+
+    chrome.action.setBadgeText({ text: badgeText });
+    chrome.action.setBadgeBackgroundColor({ color: badgeColor });
+}
+
 // 메시지 수신 처리
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.action === 'startTimer') startTimer();
-    else if (message.action === 'pauseTimer') pauseTimer();
-    else if (message.action === 'resetTimer') resetTimer();
-    else if (message.action === 'getStatus') {
+    if (message.action === 'startTimer') {
+        startTimer(message.targetMinutes);
+    } else if (message.action === 'pauseTimer') {
+        pauseTimer();
+    } else if (message.action === 'resetTimer') {
+        resetTimer();
+    } else if (message.action === 'getStatus') {
+        const now = Date.now();
+        let elapsed = 0;
+        if (timerState.startTime) {
+            elapsed = Math.floor((timerState.pausedTime || now) - timerState.startTime) / 1000;
+        }
+        const targetSeconds = timerState.activeTargetMinutes * 60;
+        const remaining = Math.max(Math.ceil(targetSeconds - elapsed), 0); // 반올림
+        const delay = Math.max(Math.ceil(elapsed - targetSeconds), 0); // 반올림
+
         sendResponse({
             isRunning: timerState.isRunning,
             startTime: timerState.startTime,
-            pausedTime: !timerState.isRunning && timerState.startTime ? Date.now() - timerState.startTime : null
+            pausedTime: timerState.pausedTime,
+            activeTargetMinutes: timerState.activeTargetMinutes,
+            remaining,
+            delay
         });
     }
     return true; // sendResponse 비동기 응답을 위해 필요

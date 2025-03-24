@@ -12,8 +12,12 @@
         <i class="bi bi-stopwatch"></i>
         <div class="progress-container">
           <div class="progress-label">
-            <span>Elapsed</span>
-            <span id="elapsed">00:00</span>
+            <span>Remaining</span>
+            <div class="time-display">
+              <span id="elapsed">00:00</span> <!-- 초기값을 00:00으로 설정 -->
+              <span class="time-separator">/</span>
+              <span id="total-time" class="total-time">30:00</span>
+            </div>
           </div>
           <div class="progress-bar">
             <div class="progress" id="elapsed-progress"></div>
@@ -25,7 +29,9 @@
         <div class="progress-container">
           <div class="progress-label">
             <span>Delay</span>
-            <span id="delay">0s</span>
+            <div class="time-display">
+              <span id="delay" class="delay-time">00:00</span>
+            </div>
           </div>
           <div class="progress-bar">
             <div class="progress" id="delay-progress"></div>

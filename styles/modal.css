@@ -1,0 +1,270 @@
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(51, 51, 68, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    border-radius: 20px;
+    width: 260px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+}
+
+.modal-header {
+    padding: 16px;
+    border-bottom: 1px solid rgba(138, 123, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-body {
+    padding: 16px;
+}
+
+.modal-footer {
+    padding: 16px;
+    border-top: 1px solid rgba(138, 123, 255, 0.1);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* 타이머 슬라이더 모달 스타일 */
+.timer-modal {
+    width: 300px;
+    transform: none;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+}
+
+.timer-slider {
+    width: 100%;
+    margin: 20px 0;
+    accent-color: var(--primary-color);
+}
+
+.timer-time {
+    font-size: 32px;
+    font-weight: 600;
+    font-family: 'SF Mono', 'Consolas', monospace;
+    text-align: center;
+    color: var(--primary-color);
+    margin: 10px 0;
+}
+
+#timerSliderHeader {
+    cursor: move;
+    user-select: none;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+.modal-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(51, 51, 68, 0.5);
+    backdrop-filter: blur(4px);
+    display: none;
+    z-index: 999;
+}
+
+/* Time Picker Modal */
+.time-picker-modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 280px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 16px;
+    display: none;
+    box-shadow: var(--shadow);
+    z-index: 1000;
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(10px);
+}
+
+.time-picker-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.scroll-container {
+    height: 140px;
+    width: 50px;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    padding-top: 60px;
+    padding-bottom: 60px;
+    margin: 0 5px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--card-bg);
+}
+
+.scroll-container::-webkit-scrollbar {
+    display: none;
+}
+
+.time-item {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    scroll-snap-align: center;
+    font-size: 1em;
+    color: var(--text-secondary);
+}
+
+.time-item.active {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.selection-overlay {
+    position: absolute;
+    top: 50px;
+    left: 0;
+    right: 0;
+    height: 40px;
+    border-top: 2px solid var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    pointer-events: none;
+    opacity: 0.2;
+}
+
+.input-group {
+    display: inline-flex;
+    align-items: center;
+    font-size: 1.2em;
+    gap: 5px;
+}
+
+.input-group input {
+    width: 50px;
+    text-align: center;
+    font-size: 1em;
+    padding: 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--primary-color);
+    background: var(--card-bg);
+}
+
+.btn-primary {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--primary-color);
+    color: white;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+}
+
+/* Timer Container Styles */
+.timer-container {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 16px;
+    width: 280px;
+    text-align: center;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+}
+
+#timerDisplay {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.timer-controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.timer-controls button {
+    border: none;
+    background: var(--card-bg);
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    box-shadow: var(--card-shadow);
+}
+
+.timer-controls button:hover {
+    background: var(--primary-hover);
+    color: white;
+}
+
+.presets {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.presets button {
+    flex: 1;
+    border: none;
+    background: var(--card-bg);
+    padding: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.presets button:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: transparent;
+}
+
+.brand {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: var(--primary-color);
+}

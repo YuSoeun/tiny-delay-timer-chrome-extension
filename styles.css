@@ -98,6 +98,40 @@ body::after {
   margin-bottom: 16px;
 }
 
+.time-display-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+
+.time-slider {
+  width: 200px;
+  height: 4px;
+  -webkit-appearance: none;
+  background: rgba(138, 123, 255, 0.1);
+  border-radius: 2px;
+  outline: none;
+}
+
+.time-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(122, 105, 230, 0.2);
+}
+
+.time-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background: var(--primary-hover);
+  box-shadow: 0 2px 8px rgba(122, 105, 230, 0.3);
+}
+
 #total-time, 
 #elapsed {
   width: 160px;
@@ -114,12 +148,31 @@ body::after {
 }
 
 #total-time {
+  width: 160px;
   height: 36px;
   padding: 0;
+  font-size: 32px;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-weight: 600;
+  font-feature-settings: "tnum";
   color: var(--text-primary);
   background: transparent;
   border: none;
+  text-align: center;
+  letter-spacing: -0.3px;
   caret-color: var(--primary-color);
+  cursor: ns-resize;
+  user-select: none;
+}
+
+#total-time::selection {
+  background-color: rgba(138, 123, 255, 0.2);
+  color: var(--primary-color);
+}
+
+#total-time:focus {
+  outline: none;
+  color: var(--primary-color);
 }
 
 /* 하단 정보 디스플레이 통일 */
@@ -327,7 +380,6 @@ body::after {
   font-size: 13px;  /* 14px에서 감소 */
   font-family: 'SF Mono', 'Consolas', monospace;  /* 모노스페이스 폰트 추가 */
   font-feature-settings: "tnum";  /* 숫자 너비 일정하게 */
-  font-weight: 600;
   transition: all 0.2s ease;
   box-shadow: var(--card-shadow);
   min-width: 80px;  /* 최소 너비 설정 */
@@ -364,6 +416,7 @@ body::after {
   text-align: center;
   letter-spacing: -0.5px;  /* 자간 조정 */
   caret-color: var(--primary-color);
+  cursor: default;
 }
 
 #total-time::-webkit-inner-spin-button,
@@ -642,134 +695,18 @@ input[type="number"]:focus {
   text-decoration: none;
 }
 
-.github-link:hover {
-  opacity: 1;
-  transform: translateY(-1px);
-}
-
 /* 깃허브 정보 스타일 제거 */
 .github-info {
   display: none;
 }
 
-.github-link:hover,
 .settings-btn:hover {
   transform: translateY(-2px);
   color: var(--primary-color);
   box-shadow: 0 4px 8px rgba(122, 105, 230, 0.15);
 }
 
-/* 모달 스타일 */
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(51, 51, 68, 0.6);
-  backdrop-filter: blur(4px);
-  z-index: 1000;
-}
-
-.modal.show {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-content {
-  background: var(--card-bg);
-  border-radius: 20px;
-  width: 260px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--border-color);
-}
-
-.modal-header {
-  padding: 16px;
-  border-bottom: 1px solid rgba(138, 123, 255, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 18px;
-  color: var(--text-primary);
-}
-
-.modal-body {
-  padding: 16px;
-}
-
-.preset-edit {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.modal-footer {
-  padding: 16px;
-  border-top: 1px solid rgba(138, 123, 255, 0.1);
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.close-btn {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-secondary);
-  transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-  color: var(--primary-color);
-}
-
-button {
-  cursor: pointer;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 12px;
-  font-weight: 600;
-  box-shadow: 0 4px 10px rgba(122, 105, 230, 0.2);
-  transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-  background: linear-gradient(135deg, var(--primary-hover), var(--gradient-end));
-  box-shadow: 0 6px 14px rgba(122, 105, 230, 0.25);
-  transform: translateY(-2px);
-}
-
-.btn-secondary {
-  background-color: var(--card-bg);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  padding: 10px 16px;
-  border-radius: 12px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.btn-secondary:hover {
-  color: var(--primary-color);
-  border-color: var(--primary-color);
-  transform: translateY(-2px);
-}
+/* 모달 관련 스타일 제거 - modal.css로 이동 */
 
 /* 타이머 상태에 따른 표시/숨김 처리 */
 .timer-setup {
@@ -793,4 +730,47 @@ button {
 
 .container.running .bottom-controls {
   display: none;
+}
+
+/* 타이머 슬라이더 모달 스타일 */
+.timer-modal {
+  width: 300px;
+  transform: none;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+.timer-slider {
+  width: 100%;
+  margin: 20px 0;
+  accent-color: var(--primary-color);
+}
+
+.timer-time {
+  font-size: 32px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  text-align: center;
+  color: var(--primary-color);
+  margin: 10px 0;
+}
+
+#timerSliderHeader {
+  cursor: move;
+  user-select: none;
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.modal-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(51, 51, 68, 0.5);
+  backdrop-filter: blur(4px);
+  display: none;
+  z-index: 999;
 }

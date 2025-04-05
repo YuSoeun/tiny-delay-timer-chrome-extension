@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         setupEventListeners();
         initializeTimerState();
+        setupTimerSlider();
     } catch (error) {
         console.error('Initialization error:', error);
     }
@@ -46,45 +47,145 @@ function setupEventListeners() {
     document.getElementById('savePresets').addEventListener('click', savePresetChanges);
     document.querySelector('.close-btn').addEventListener('click', closePresetModal);
 
-    // total-time 입력 처리
     const totalTimeInput = document.getElementById('total-time');
+    let isDragging = false;
+    let startY = 0;
+    let selectedPart = '';
+    let selectedStart = 0;
+    let originalValue = 0;
 
-    totalTimeInput.addEventListener('input', (e) => {
-        let value = e.target.value.replace(/[^0-9:]/g, ''); // 숫자와 콜론만 허용
-        const parts = value.split(':');
-        
-        // 콜론이 2개 이상이면 처음 3부분만 사용
-        if (parts.length > 3) {
-            parts.length = 3;
-            value = parts.join(':');
+    totalTimeInput.addEventListener('click', (e) => {
+        const pos = e.target.selectionStart;
+        // 클릭 위치에 따라 시/분/초 선택
+        if (pos <= 2) {
+            selectedPart = 'hours';
+            selectedStart = 0;
+        } else if (pos <= 5) {
+            selectedPart = 'minutes';
+            selectedStart = 3;
+        } else {
+            selectedPart = 'seconds';
+            selectedStart = 6;
         }
-
-        // 각 부분의 유효성 검사 및 수정
-        if (parts.length === 3) {
-            let [hours, minutes, seconds] = parts.map(part => parseInt(part) || 0);
-            
-            hours = Math.min(Math.max(hours, 0), 99);
-            minutes = Math.min(Math.max(minutes, 0), 59);
-            seconds = Math.min(Math.max(seconds, 0), 59);
-
-            value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        }
-
-        e.target.value = value;
+        e.target.setSelectionRange(selectedStart, selectedStart + 2);
     });
 
-    totalTimeInput.addEventListener('blur', (e) => {
-        let value = e.target.value;
-        const parts = value.split(':');
+    totalTimeInput.addEventListener('mousedown', (e) => {
+        if (timerState.isRunning) return;
         
-        // 올바른 HH:MM:SS 형식이 아니면 기본값으로 설정
-        if (parts.length !== 3) {
-            value = '00:00:00';
+        isDragging = true;
+        startY = e.clientY;
+        const [hours, minutes, seconds] = totalTimeInput.value.split(':').map(Number);
+        
+        switch(selectedPart) {
+            case 'hours': originalValue = hours; break;
+            case 'minutes': originalValue = minutes; break;
+            case 'seconds': originalValue = seconds; break;
+        }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging || timerState.isRunning) return;
+        
+        const delta = Math.round((startY - e.clientY) / 5);
+        let newValue = originalValue + delta;
+        const [hours, minutes, seconds] = totalTimeInput.value.split(':').map(Number);
+        
+        // 범위 제한
+        switch(selectedPart) {
+            case 'hours':
+                newValue = Math.min(Math.max(newValue, 0), 99);
+                totalTimeInput.value = formatTime(newValue * 3600 + minutes * 60 + seconds);
+                break;
+            case 'minutes':
+                newValue = Math.min(Math.max(newValue, 0), 59);
+                totalTimeInput.value = formatTime(hours * 3600 + newValue * 60 + seconds);
+                break;
+            case 'seconds':
+                newValue = Math.min(Math.max(newValue, 0), 59);
+                totalTimeInput.value = formatTime(hours * 3600 + minutes * 60 + newValue);
+                break;
+        }
+        totalTimeInput.setSelectionRange(selectedStart, selectedStart + 2);
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        // 변경된 값을 저장
+        const [hours, minutes, seconds] = totalTimeInput.value.split(':').map(Number);
+        const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+        timerState.targetMinutes = Math.ceil(totalSeconds / 60);
+        chrome.storage.local.set({ targetMinutes: timerState.targetMinutes });
+    });
+
+    // 키보드 입력 처리
+    totalTimeInput.addEventListener('keydown', (e) => {
+        if (timerState.isRunning) return;
+        
+        if (e.key >= '0' && e.key <= '9') {
+            e.preventDefault();
+            const [hours, minutes, seconds] = totalTimeInput.value.split(':').map(Number);
+            let newValue = parseInt(e.key);
+            
+            switch(selectedPart) {
+                case 'hours':
+                    totalTimeInput.value = formatTime(newValue * 3600 + minutes * 60 + seconds);
+                    break;
+                case 'minutes':
+                    totalTimeInput.value = formatTime(hours * 3600 + newValue * 60 + seconds);
+                    break;
+                case 'seconds':
+                    totalTimeInput.value = formatTime(hours * 3600 + minutes * 60 + newValue);
+                    break;
+            }
+            totalTimeInput.setSelectionRange(selectedStart, selectedStart + 2);
         }
         
-        const [hours, minutes, seconds] = value.split(':').map(Number);
-        const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-        e.target.value = formatTime(totalSeconds);
+        // 방향키로 이동
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            selectedStart = e.key === 'ArrowLeft' ? 
+                (selectedStart === 0 ? 6 : selectedStart - 3) : 
+                (selectedStart === 6 ? 0 : selectedStart + 3);
+            selectedPart = selectedStart === 0 ? 'hours' : selectedStart === 3 ? 'minutes' : 'seconds';
+            totalTimeInput.setSelectionRange(selectedStart, selectedStart + 2);
+        }
+    });
+
+    // 슬라이더 이벤트 리스너 추가
+    const timeSlider = document.getElementById('time-slider');
+
+    timeSlider.addEventListener('input', (e) => {
+        const seconds = parseInt(e.target.value);
+        totalTimeInput.value = formatTime(seconds);
+    });
+
+    timeSlider.addEventListener('change', (e) => {
+        const seconds = parseInt(e.target.value);
+        timerState.targetMinutes = Math.ceil(seconds / 60);
+        chrome.storage.local.set({ targetMinutes: timerState.targetMinutes });
+    });
+
+    // total-time 클릭 시 타임피커 모달 표시
+    document.getElementById('total-time').addEventListener('click', function(e) {
+        if (!timerState.isRunning) {
+            window.timePickerModal.open(this.value);
+        }
+    });
+
+    // 메시지 리스너 추가
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.action === 'timeSelected') {
+            const totalTimeInput = document.getElementById('total-time');
+            totalTimeInput.value = message.time;
+            
+            // 타이머 상태 업데이트
+            const [hours, minutes] = message.time.split(':');
+            const totalSeconds = hours * 3600 + minutes * 60;
+            timerState.targetMinutes = Math.ceil(totalSeconds / 60);
+            chrome.storage.local.set({ targetMinutes: timerState.targetMinutes });
+        }
     });
 }
 
@@ -111,7 +212,6 @@ function handleTargetTimeChange(e) {
 }
 
 function handleStart() {
-    // 입력된 시간 가져오기
     const timeValue = document.getElementById('total-time').value;
     
     if (!isValidTime(timeValue)) {
@@ -122,23 +222,23 @@ function handleStart() {
     // HH:MM:SS를 초로 변환
     const [hours, minutes, seconds] = timeValue.split(':').map(Number);
     const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
-    const totalMinutes = Math.ceil(totalSeconds / 60); // 초 단위 올림으로 분 계산
-
-    timerState.activeTargetMinutes = totalMinutes;
+    
+    timerState.activeTargetMinutes = Math.ceil(totalSeconds / 60);
     timerState.isRunning = true;
     timerState.startTime = Date.now();
     timerState.pausedTime = null;
 
     // UI 상태 변경
     document.querySelector('.container').classList.add('running');
+    document.getElementById('elapsed').textContent = formatTime(totalSeconds);
 
     // 타이머 시작 메시지 전송
     chrome.runtime.sendMessage({
         action: 'startTimer',
-        targetMinutes: totalMinutes
+        targetMinutes: timerState.activeTargetMinutes,
+        totalSeconds: totalSeconds
     });
 
-    // 상태 업데이트 인터벌 시작
     startStatusUpdateInterval();
 }
 
@@ -173,9 +273,14 @@ function handlePresetClick(e) {
     const time = parseInt(e.target.dataset.time, 10);
     if (!isNaN(time) && time > 0) {
         timerState.targetMinutes = time;
-        // total-time을 업데이트하고 포맷팅
+        const totalSeconds = time * 60;
+        
+        // total-time과 slider 모두 업데이트
         const totalTimeInput = document.getElementById('total-time');
-        totalTimeInput.value = formatTime(time * 60);
+        const timeSlider = document.getElementById('time-slider');
+        
+        totalTimeInput.value = formatTime(totalSeconds);
+        timeSlider.value = totalSeconds;
         
         // 스토리지 업데이트
         chrome.storage.local.set({ targetMinutes: time });
@@ -233,29 +338,34 @@ function startStatusUpdateInterval() {
     clearInterval(timerState.elapsedInterval);
 
     timerState.elapsedInterval = setInterval(() => {
-        chrome.runtime.sendMessage({ action: 'getStatus' }, (res) => {
-            if (res) {
-                const targetSeconds = timerState.activeTargetMinutes * 60;
-                updateUIFromStatus(res.remaining, res.delay, targetSeconds);
-            }
-        });
+        if (!timerState.isRunning) return;
+
+        const now = Date.now();
+        const elapsed = Math.floor((now - timerState.startTime) / 1000);
+        const totalSeconds = timerState.activeTargetMinutes * 60;
+        const remaining = Math.max(totalSeconds - elapsed, 0);
+        const delay = Math.max(elapsed - totalSeconds, 0);
+
+        updateUIFromStatus(remaining, delay, totalSeconds);
     }, 1000);
 }
 
-function updateUIFromStatus(remaining, delay, targetSeconds) {
-    const totalSeconds = timerState.activeTargetMinutes * 60;
+function updateUIFromStatus(remaining, delay, totalSeconds) {
+    // 남은 시간 표시
     document.getElementById('elapsed').textContent = formatTime(remaining);
+    
+    // 지연 시간 표시
     document.getElementById('delay').textContent = delay > 0 ? `+${formatTime(delay)}` : '';
 
-    // 총 소요 시간 계산 및 표시 (elapsed + delay)
+    // 총 소요 시간 계산 및 표시
     const totalElapsed = (totalSeconds - remaining) + delay;
     document.getElementById('total-elapsed').textContent = formatTime(totalElapsed);
 
     // 프로그레스 바 업데이트
-    const progress = Math.max((remaining / totalSeconds) * 100, 0);
+    const progress = ((totalSeconds - remaining) / totalSeconds) * 100;
+    const delayProgress = (delay / totalSeconds) * 100;
+    
     document.getElementById('elapsed-progress').style.width = `${Math.floor(progress)}%`;
-
-    const delayProgress = Math.min((delay / totalSeconds) * 100, 100);
     document.getElementById('delay-progress').style.width = `${Math.floor(delayProgress)}%`;
 }
 
@@ -345,5 +455,63 @@ function updatePresetButtons(presets = [30, 41, 60]) {
         const totalSeconds = minutes * 60;
         button.textContent = formatTime(totalSeconds);  // 분을 HH:MM:SS 형식으로 변환
         button.dataset.time = minutes;
+    });
+}
+
+// 타이머 슬라이더 모달 관련 코드 추가
+function setupTimerSlider() {
+    const modal = document.getElementById('timerSliderModal');
+    const modalBackground = document.getElementById('timerSliderBackground');
+    const timerSlider = document.getElementById('timerSlider');
+    const timerTime = document.getElementById('timerTime');
+    const modalHeader = document.getElementById('timerSliderHeader');
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    // 드래그 기능 구현
+    modalHeader.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        offsetX = e.clientX - modal.offsetLeft;
+        offsetY = e.clientY - modal.offsetTop;
+        modal.style.cursor = 'move';
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (isDragging) {
+            modal.style.left = e.clientX - offsetX + 'px';
+            modal.style.top = e.clientY - offsetY + 'px';
+        }
+    });
+
+    document.addEventListener('mouseup', function() {
+        isDragging = false;
+        modal.style.cursor = 'default';
+    });
+
+    // 슬라이더 값 변경 시 시간 업데이트
+    timerSlider.addEventListener('input', function() {
+        const totalSeconds = parseInt(timerSlider.value);
+        timerTime.textContent = formatTime(totalSeconds);
+        document.getElementById('total-time').value = formatTime(totalSeconds);
+    });
+
+    // 모달 닫기
+    modalBackground.addEventListener('click', function() {
+        modal.style.display = 'none';
+        modalBackground.style.display = 'none';
+    });
+
+    // total-time 클릭 시 슬라이더 모달 표시
+    document.getElementById('total-time').addEventListener('click', function(e) {
+        if (!timerState.isRunning) {
+            modal.style.display = 'block';
+            modalBackground.style.display = 'block';
+            // 현재 설정된 시간을 슬라이더에 반영
+            const currentTime = this.value.split(':').map(Number);
+            const totalSeconds = currentTime[0] * 3600 + currentTime[1] * 60 + currentTime[2];
+            timerSlider.value = totalSeconds;
+            timerTime.textContent = formatTime(totalSeconds);
+            e.stopPropagation();
+        }
     });
 }

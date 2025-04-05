@@ -144,7 +144,7 @@ function startStatusUpdateInterval() {
 function updateUIFromStatus(remaining, delay, targetSeconds) {
     const totalSeconds = timerState.activeTargetMinutes * 60;
     document.getElementById('elapsed').textContent = formatTime(remaining);
-    document.getElementById('delay').textContent = delay > 0 ? `(+${formatTime(delay)})` : '';
+    document.getElementById('delay').textContent = delay > 0 ? `+${formatTime(delay)}` : '';
 
     // 총 소요 시간 계산 및 표시 (elapsed + delay)
     const totalElapsed = (totalSeconds - remaining) + delay;

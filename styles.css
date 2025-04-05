@@ -20,7 +20,6 @@ body {
   margin: 0;
   background-color: var(--background);
   color: var(--text-primary);
-  min-height: 100vh;
   position: relative;
   overflow: hidden;
 }
@@ -55,10 +54,12 @@ body::after {
 }
 
 .container {
-  width: 300px;
-  padding: 16px;
+  width: 256px;
+  padding: 12px;
+  max-height: 440px;
   position: relative;
   z-index: 1;
+  overflow: hidden;
 }
 
 .title {
@@ -66,10 +67,12 @@ body::after {
 }
 
 .status-card {
+  width: 100%;
+  box-sizing: border-box;
   background-color: var(--card-bg);
-  border-radius: 24px;
-  padding: 20px;
-  margin-bottom: 16px;
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 12px;
   box-shadow: var(--card-shadow);
   backdrop-filter: blur(10px);
   border: 1px solid var(--border-color);
@@ -173,6 +176,49 @@ body::after {
   background: linear-gradient(90deg, #ffb8d9, #ff7eb5);
   border-radius: 6px;
   transition: width 0.3s ease;
+}
+
+/* Info row */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0 0;
+  padding: 0 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1;
+}
+
+.total-time-info,
+.delay-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  min-width: 80px;
+  height: 16px;
+}
+
+.total-time-info i,
+.delay-indicator i {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 16px;
+}
+
+#total-elapsed,
+#delay {
+  color: var(--primary-color);
+  font-weight: 600;
+  font-feature-settings: "tnum";
+  font-family: 'SF Mono', 'Consolas', monospace;
+}
+
+#delay {
+  color: var(--danger-color);
 }
 
 /* 메인 컨트롤 버튼 */
@@ -531,45 +577,4 @@ button {
   color: var(--primary-color);
   border-color: var(--primary-color);
   transform: translateY(-2px);
-}
-
-/* 기타 커스텀 스타일 */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(138, 123, 255, 0.05);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(138, 123, 255, 0.2);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(138, 123, 255, 0.3);
-}
-
-/* 모바일 최적화 */
-@media (max-width: 320px) {
-  .container {
-    width: 100%;
-    padding: 12px;
-  }
-  
-  .main-controls {
-    gap: 12px;
-  }
-  
-  .btn-main {
-    width: 48px;
-    height: 48px;
-  }
-  
-  #start {
-    width: 56px;
-    height: 56px;
-  }
 }

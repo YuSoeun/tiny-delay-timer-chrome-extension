@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html style="overflow: hidden; width: 280px; height: 440px;">
 <head>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -19,13 +19,13 @@
         
         <!-- 정보 요약 행 (지연 시간 및 총 시간) -->
         <div class="info-row">
-          <div class="delay-indicator">
-            <i class="bi bi-exclamation-circle"></i>
-            <span id="delay" class="delay-time">(+00:00)</span> delay
-          </div>
           <div class="total-time-info">
             <i class="bi bi-clock-history"></i>
-            Total time: <span id="total-elapsed">05:00</span>
+            Total <span id="total-elapsed">05:00</span>
+          </div>
+          <div class="delay-indicator">
+            <i class="bi bi-exclamation-circle"></i>
+            Delayed <span id="delay" class="delay-time">(+00:00)</span>
           </div>
         </div>
       </div>

@@ -106,8 +106,14 @@ function updateBadge() {
         badgeColor = '#E74C3C';
     }
 
-    chrome.action.setBadgeText({ text: badgeText });
-    chrome.action.setBadgeBackgroundColor({ color: badgeColor });
+    console.log('Updating badge:', { badgeText, badgeColor }); // 디버그 로그 추가
+
+    try {
+        chrome.action.setBadgeText({ text: badgeText });
+        chrome.action.setBadgeBackgroundColor({ color: badgeColor });
+    } catch (error) {
+        console.error('Failed to update badge:', error);
+    }
 }
 
 // 메시지 수신 처리

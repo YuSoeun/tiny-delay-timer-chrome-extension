@@ -4,7 +4,8 @@
     "version": "1.0",
     "description": "A tiny timer for tracking delays",
     "permissions": [
-        "storage"
+        "storage",
+        "action"
     ],
     "action": {
         "default_popup": "popup.html",

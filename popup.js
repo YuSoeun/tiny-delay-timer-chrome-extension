@@ -146,6 +146,10 @@ function updateUIFromStatus(remaining, delay, targetSeconds) {
     document.getElementById('elapsed').textContent = formatTime(remaining);
     document.getElementById('delay').textContent = delay > 0 ? `+${formatTime(delay)}` : '00:00';
 
+    // 총 소요 시간 계산 및 표시 (elapsed + delay)
+    const totalElapsed = (totalSeconds - remaining) + delay;
+    document.getElementById('total-elapsed').textContent = formatTime(totalElapsed);
+
     // 프로그래스 바 계산을 총 시간 기준으로 변경
     const progress = Math.max((remaining / totalSeconds) * 100, 0);
     document.getElementById('elapsed-progress').style.width = `${Math.floor(progress)}%`;

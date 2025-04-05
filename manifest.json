@@ -15,7 +15,7 @@
             "128": "icons/icon128.png"
         },
         "default_width": 280,
-        "default_height": 440
+        "default_height": 350
     },
     "background": {
         "service_worker": "background.js",

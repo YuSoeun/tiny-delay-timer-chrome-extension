@@ -56,7 +56,7 @@ body::after {
 .container {
   width: 256px;
   padding: 12px;
-  max-height: 440px;
+  max-height: 380px;
   position: relative;
   z-index: 1;
   overflow: hidden;
@@ -71,7 +71,7 @@ body::after {
   box-sizing: border-box;
   background-color: var(--card-bg);
   border-radius: 16px;
-  padding: 12px;
+  padding: 16px;
   margin-bottom: 12px;
   box-shadow: var(--card-shadow);
   backdrop-filter: blur(10px);
@@ -81,11 +81,11 @@ body::after {
 /* 메인 카드 스타일 */
 .main-card {
   text-align: center;
-  padding: 24px 20px;
+  padding: 16px;
 }
 
 .timer-display {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .time-display {
@@ -94,11 +94,11 @@ body::after {
   justify-content: center;
   gap: 6px;
   font-family: 'SF Mono', 'Consolas', monospace;
-  font-size: 28px;
+  font-size: 28px; /* 24px에서 복구 */
   font-weight: 600;
   font-feature-settings: "tnum";
   letter-spacing: -0.3px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 #elapsed {
@@ -122,13 +122,14 @@ body::after {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 14px;
+  font-size: 12px; /* 11px에서 증가 */
   color: var(--text-secondary);
   margin-top: 8px;
 }
 
 .delay-indicator i {
   color: var(--danger-color);
+  font-size: 12px; /* 11px에서 증가 */
 }
 
 .delay-time {
@@ -143,11 +144,11 @@ body::after {
 .progress-bar {
   position: relative;
   width: 100%;
-  height: 8px;
+  height: 6px;
   background-color: rgba(138, 123, 255, 0.1);
   border-radius: 6px;
   overflow: hidden;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .progress {
@@ -185,7 +186,7 @@ body::after {
   align-items: center;
   margin: 8px 0 0;
   padding: 0 4px;
-  font-size: 11px;
+  font-size: 12px; /* 11px에서 증가 */
   color: var(--text-secondary);
   line-height: 1;
 }
@@ -195,14 +196,14 @@ body::after {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: 12px; /* 11px에서 증가 */
   min-width: 80px;
   height: 16px;
 }
 
 .total-time-info i,
 .delay-indicator i {
-  font-size: 11px;
+  font-size: 12px; /* 11px에서 증가 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -225,17 +226,18 @@ body::after {
 .main-controls {
   display: flex;
   justify-content: center;
-  gap: 16px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .btn-main {
-  width: 54px;
-  height: 54px;
-  border-radius: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   color: var(--text-primary);
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  font-size: 22px;
+  font-size: 16px;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   box-shadow: var(--card-shadow);
@@ -247,13 +249,13 @@ body::after {
 }
 
 #start {
-  width: 64px;
-  height: 64px;
+  width: 36px;
+  height: 36px;
   background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
   color: white;
   border: none;
   box-shadow: 0 6px 12px rgba(122, 105, 230, 0.25);
-  font-size: 26px;
+  font-size: 16px;
 }
 
 #start:hover {
@@ -273,19 +275,19 @@ body::after {
 
 .preset-buttons {
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 
 .preset-btn {
   flex: 1;
-  height: 40px;
-  padding: 0 10px;
+  height: 28px;
+  padding: 0;
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 14px;
+  border-radius: 8px;
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 13px; /* 12px에서 증가 */
   font-weight: 600;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
@@ -308,8 +310,9 @@ body::after {
 
 .custom-time {
   display: flex;
-  gap: 10px;
-  align-items: flex-end;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
 }
 
 .input-with-label {
@@ -329,11 +332,14 @@ body::after {
 }
 
 input[type="number"] {
-  width: 100%;
-  padding: 12px 36px 12px 14px;
-  font-size: 15px;
+  flex: 1;
+  width: auto;
+  height: 28px;
+  padding: 0 8px;
+  min-width: 0;
+  font-size: 13px;
+  border-radius: 8px;
   border: 1px solid var(--border-color);
-  border-radius: 14px;
   background-color: var(--card-bg);
   backdrop-filter: blur(10px);
   transition: all 0.2s ease;
@@ -357,13 +363,14 @@ input[type="number"]:focus {
 }
 
 .btn-apply {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 8px;
   background: linear-gradient(135deg, var(--success-color), #4fc08d);
   color: white;
   border: none;
-  font-size: 18px;
+  font-size: 13px;
   transition: all 0.3s ease;
   box-shadow: 0 4px 8px rgba(109, 213, 181, 0.2);
 }
@@ -429,12 +436,12 @@ input[type="number"]:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 4px;
+  padding: 6px 2px;
   margin-top: 8px;
 }
 
 .app-title {
-  font-size: 13px;
+  font-size: 13px; /* 12px에서 증가 */
   font-weight: 600;
   color: var(--text-secondary);
 }
@@ -445,16 +452,16 @@ input[type="number"]:focus {
 }
 
 .settings-btn, .app-actions a {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
-  font-size: 15px;
+  font-size: 13px;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   box-shadow: var(--card-shadow);

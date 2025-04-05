@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html style="overflow: hidden; width: 280px; height: 350px;">
+<html style="overflow: hidden; width: 320px; height: 280px;">
 <head>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,20 +12,20 @@
       <!-- 현재 타이머 상태 표시 -->
       <div class="timer-display">
         <div class="time-display">
-          <span id="elapsed">00:00</span>
+          <span id="elapsed">00:00:00</span>
           <span class="time-separator">/</span>
-          <span id="total-time" class="total-time">01:00</span>
+          <input type="text" id="total-time" value="00:00:00" pattern="[0-9]*" inputmode="numeric" maxlength="8">
         </div>
         
         <!-- 정보 요약 행 (지연 시간 및 총 시간) -->
         <div class="info-row">
           <div class="total-time-info">
             <i class="bi bi-clock-history"></i>
-            Total <span id="total-elapsed">05:00</span>
+            Total <span id="total-elapsed">00:00:00</span>
           </div>
           <div class="delay-indicator">
             <i class="bi bi-exclamation-circle"></i>
-            Delayed <span id="delay" class="delay-time">(+00:00)</span>
+            Delayed <span id="delay" class="delay-time">(+00:00:00)</span>
           </div>
         </div>
       </div>
@@ -50,27 +50,13 @@
       </div>
     </div>
     
-    <!-- 세팅 카드: 심플한 프리셋 타이머 설정 -->
-    <div class="status-card settings-card">
-      <!-- 프리셋 버튼 -->
+    <!-- 앱 하단 컨트롤 -->
+    <div class="bottom-controls">
       <div class="preset-buttons">
         <button class="preset-btn" data-time="30">30m</button>
-        <button class="preset-btn active" data-time="41">41m</button>
+        <button class="preset-btn" data-time="41">41m</button>
         <button class="preset-btn" data-time="60">60m</button>
       </div>
-      
-      <!-- 사용자 지정 시간 입력 (매우 간소화) -->
-      <div class="custom-time">
-        <input type="number" id="targetTime" min="1" value="1" placeholder="Minutes"/>
-        <button class="btn-apply" id="apply-time">
-          <i class="bi bi-check-lg"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- 앱 정보 바 -->
-    <div class="app-info">
-      <span class="app-title">Tiny Delay Timer</span>
       <div class="app-actions">
         <button class="settings-btn" title="Edit time presets">
           <i class="bi bi-gear"></i>
@@ -80,38 +66,42 @@
         </a>
       </div>
     </div>
-  </div>
-
-  <!-- 프리셋 설정 모달 -->
-  <div class="modal" id="presetModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Edit Time Presets</h3>
-        <button class="close-btn"><i class="bi bi-x"></i></button>
-      </div>
-      <div class="modal-body">
-        <div class="preset-edit">
-          <div class="input-with-label">
-            <label for="preset1">Preset 1</label>
-            <input type="number" min="1" placeholder="Minutes" id="preset1" />
-          </div>
-          <div class="input-with-label">
-            <label for="preset2">Preset 2</label>
-            <input type="number" min="1" placeholder="Minutes" id="preset2" />
-          </div>
-          <div class="input-with-label">
-            <label for="preset3">Preset 3</label>
-            <input type="number" min="1" placeholder="Minutes" id="preset3" />
+    
+    <!-- 설정 모달 -->
+    <div class="modal" id="presetModal">
+      <div class="modal-content">
+        <!-- 프리셋 설정 모달 -->
+        <div class="modal-header">
+          <h3>Edit Time Presets</h3>
+          <button class="close-btn"><i class="bi bi-x"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="preset-edit">
+            <div class="input-with-label">
+              <label for="preset1">Preset 1</label>
+              <input type="number" min="1" placeholder="Minutes" id="preset1" />
+            </div>
+            <div class="input-with-label">
+              <label for="preset2">Preset 2</label>
+              <input type="number" min="1" placeholder="Minutes" id="preset2" />
+            </div>
+            <div class="input-with-label">
+              <label for="preset3">Preset 3</label>
+              <input type="number" min="1" placeholder="Minutes" id="preset3" />
+            </div>
+            <div class="input-with-label">
+              <label for="preset4">Preset 4</label>
+              <input type="number" min="1" placeholder="Minutes" id="preset4" />
+            </div>
           </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" id="cancelPresets">Cancel</button>
-        <button class="btn-primary" id="savePresets">Save</button>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="cancelPresets">Cancel</button>
+          <button class="btn-primary" id="savePresets">Save</button>
+        </div>
       </div>
     </div>
   </div>
-  
   <script src="popup.js"></script>
 </body>
 </html>

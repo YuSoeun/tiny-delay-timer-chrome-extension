@@ -10,9 +10,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const result = await chrome.storage.local.get(['targetMinutes', 'presets']);
         timerState.targetMinutes = result.targetMinutes || 30;
-        document.getElementById('targetTime').value = timerState.targetMinutes;
+        const totalTimeInput = document.getElementById('total-time');
+        totalTimeInput.value = formatTime(timerState.targetMinutes * 60);
+        
+        // 입력란에 포커스 및 커서 위치 설정
+        totalTimeInput.focus();
+        totalTimeInput.setSelectionRange(totalTimeInput.value.length, totalTimeInput.value.length);
 
-        const presets = result.presets || [30, 40, 60];
+        const presets = result.presets || [30, 41, 60];  // 기본값 3개로 수정
         updatePresetButtons(presets);
 
         setupEventListeners();
@@ -40,6 +45,61 @@ function setupEventListeners() {
     document.getElementById('cancelPresets').addEventListener('click', closePresetModal);
     document.getElementById('savePresets').addEventListener('click', savePresetChanges);
     document.querySelector('.close-btn').addEventListener('click', closePresetModal);
+
+    // total-time 입력 처리
+    const totalTimeInput = document.getElementById('total-time');
+
+    totalTimeInput.addEventListener('input', (e) => {
+        let value = e.target.value.replace(/[^0-9:]/g, ''); // 숫자와 콜론만 허용
+        const parts = value.split(':');
+        
+        // 콜론이 2개 이상이면 처음 3부분만 사용
+        if (parts.length > 3) {
+            parts.length = 3;
+            value = parts.join(':');
+        }
+
+        // 각 부분의 유효성 검사 및 수정
+        if (parts.length === 3) {
+            let [hours, minutes, seconds] = parts.map(part => parseInt(part) || 0);
+            
+            hours = Math.min(Math.max(hours, 0), 99);
+            minutes = Math.min(Math.max(minutes, 0), 59);
+            seconds = Math.min(Math.max(seconds, 0), 59);
+
+            value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        e.target.value = value;
+    });
+
+    totalTimeInput.addEventListener('blur', (e) => {
+        let value = e.target.value;
+        const parts = value.split(':');
+        
+        // 올바른 HH:MM:SS 형식이 아니면 기본값으로 설정
+        if (parts.length !== 3) {
+            value = '00:00:00';
+        }
+        
+        const [hours, minutes, seconds] = value.split(':').map(Number);
+        const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+        e.target.value = formatTime(totalSeconds);
+    });
+}
+
+// 시간 유효성 검사 함수 추가
+function isValidTime(timeStr) {
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length !== 3) return false;
+    
+    const [hours, minutes, seconds] = parts;
+    if (isNaN(hours) || isNaN(minutes) || isNaN(seconds)) return false;
+    if (hours < 0 || hours > 99) return false;
+    if (minutes < 0 || minutes >= 60) return false;
+    if (seconds < 0 || seconds >= 60) return false;
+    
+    return true;
 }
 
 function handleTargetTimeChange(e) {
@@ -51,6 +111,12 @@ function handleTargetTimeChange(e) {
 }
 
 function handleStart() {
+    const timeValue = document.getElementById('total-time').value;
+    if (!isValidTime(timeValue)) {
+        alert('Invalid time format. Please use HH:MM:SS format.');
+        return;
+    }
+
     const targetMinutes = timerState.isRunning || timerState.pausedTime
         ? timerState.activeTargetMinutes // 기존 값을 유지
         : parseInt(document.getElementById('targetTime').value, 10); // 리셋 후 targetTime 값 사용
@@ -73,10 +139,22 @@ function handleStart() {
 }
 
 function handlePause() {
+    const timeValue = document.getElementById('total-time').value;
+    if (!isValidTime(timeValue)) {
+        alert('Invalid time format. Please use HH:MM:SS format.');
+        return;
+    }
+
     chrome.runtime.sendMessage({ action: 'pauseTimer' });
 }
 
 function handleReset() {
+    const timeValue = document.getElementById('total-time').value;
+    if (!isValidTime(timeValue)) {
+        alert('Invalid time format. Please use HH:MM:SS format.');
+        return;
+    }
+
     chrome.runtime.sendMessage({ action: 'resetTimer' });
     timerState.startTime = null;
     timerState.isRunning = false;
@@ -89,8 +167,18 @@ function handlePresetClick(e) {
     const time = parseInt(e.target.dataset.time, 10);
     if (!isNaN(time) && time > 0) {
         timerState.targetMinutes = time;
-        document.getElementById('targetTime').value = time; // 입력 필드에 반영
+        // total-time을 업데이트하고 포맷팅
+        const totalTimeInput = document.getElementById('total-time');
+        totalTimeInput.value = formatTime(time * 60);
+        
+        // 스토리지 업데이트
         chrome.storage.local.set({ targetMinutes: time });
+        
+        // active 상태 업데이트
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        e.target.classList.add('active');
     }
 }
 
@@ -119,6 +207,7 @@ function initializeTimerState() {
                 updateUIFromStatus(res.remaining, res.delay, targetSeconds);
             } else {
                 // 초기 상태
+                document.getElementById('elapsed').textContent = '00:00:00';
                 updateUIFromStatus(0, 0, targetSeconds);
             }
 
@@ -163,7 +252,7 @@ function updateElapsedUI(elapsed, targetSeconds) {
     const delay = Math.max(elapsed - targetSeconds, 0);
 
     document.getElementById('elapsed').textContent = formatTime(remaining);
-    document.getElementById('delay').textContent = delay > 0 ? `+${formatTime(delay)}` : '00:00';
+    document.getElementById('delay').textContent = delay > 0 ? `+${formatTime(delay)}` : '00:00:00';
 
     const progress = Math.max((remaining / targetSeconds) * 100, 0);
     document.getElementById('elapsed-progress').style.width = `${progress}%`;
@@ -194,15 +283,18 @@ function updatePausedState() {
 }
 
 function formatTime(seconds) {
-    seconds = Math.ceil(seconds); // 반올림하여 아이콘과 동일하게 표시
-    const min = Math.floor(seconds / 60);
-    const sec = seconds % 60;
-    return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+    seconds = Math.ceil(seconds);
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    // 항상 HH:MM:SS 형식으로 표시
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
 
 function openPresetModal() {
     chrome.storage.local.get(['presets'], (result) => {
-        const presets = result.presets || [30, 40, 60];
+        const presets = result.presets || [30, 41, 60];  // 기본값 3개로 수정
         document.getElementById('preset1').value = presets[0];
         document.getElementById('preset2').value = presets[1];
         document.getElementById('preset3').value = presets[2];
@@ -221,21 +313,24 @@ function savePresetChanges() {
         parseInt(document.getElementById('preset3').value, 10)
     ].filter(val => !isNaN(val) && val > 0);
 
-    if (presets.length === 3) {
-        // 크롬 스토리지에 프리셋 저장
+    if (presets.length === 3) {  // 3개 모두 유효한지 확인
         chrome.storage.local.set({ presets }, () => {
-            updatePresetButtons(presets); // 버튼 업데이트
-            closePresetModal(); // 모달 닫기
+            updatePresetButtons(presets);
+            closePresetModal();
         });
     } else {
         alert('Please enter valid preset values (greater than 0).');
     }
 }
 
-function updatePresetButtons(presets) {
+function updatePresetButtons(presets = [30, 41, 60]) {
+    if (!Array.isArray(presets) || presets.length !== 3) {
+        presets = [30, 41, 60];
+    }
     const buttons = document.querySelectorAll('.preset-btn');
     buttons.forEach((button, index) => {
-        button.textContent = `${presets[index]}m`;
-        button.dataset.time = presets[index];
+        const minutes = presets[index] || 30;
+        button.textContent = `${minutes}m`;  // HH:MM:SS 대신 단순히 분 단위로 표시
+        button.dataset.time = minutes;
     });
 }

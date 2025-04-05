@@ -54,9 +54,9 @@ body::after {
 }
 
 .container {
-  width: 256px;
+  width: 296px;  /* 276px에서 증가 */
   padding: 12px;
-  max-height: 380px;
+  max-height: 280px;  /* 380px에서 감소 */
   position: relative;
   z-index: 1;
   overflow: hidden;
@@ -81,11 +81,11 @@ body::after {
 /* 메인 카드 스타일 */
 .main-card {
   text-align: center;
-  padding: 16px;
+  padding: 14px;  /* 16px에서 감소 */
 }
 
 .timer-display {
-  margin-bottom: 12px;
+  margin-bottom: 8px;  /* 12px에서 감소 */
 }
 
 .time-display {
@@ -94,7 +94,7 @@ body::after {
   justify-content: center;
   gap: 6px;
   font-family: 'SF Mono', 'Consolas', monospace;
-  font-size: 28px; /* 24px에서 복구 */
+  font-size: 28px;
   font-weight: 600;
   font-feature-settings: "tnum";
   letter-spacing: -0.3px;
@@ -109,7 +109,7 @@ body::after {
   color: var(--text-secondary);
   font-weight: normal;
   opacity: 0.5;
-  margin: 0 2px;
+  margin: 2 0px;
 }
 
 .total-time {
@@ -148,7 +148,7 @@ body::after {
   background-color: rgba(138, 123, 255, 0.1);
   border-radius: 6px;
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: 12px;  /* 16px에서 감소 */
 }
 
 .progress {
@@ -197,7 +197,7 @@ body::after {
   align-items: center;
   gap: 4px;
   font-size: 12px; /* 11px에서 증가 */
-  min-width: 80px;
+  min-width: 100px;  /* 80px에서 증가 */
   height: 16px;
 }
 
@@ -227,7 +227,7 @@ body::after {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 8px;  /* 12px에서 감소 */
 }
 
 .btn-main {
@@ -270,42 +270,92 @@ body::after {
 
 /* 세팅 카드 스타일 */
 .settings-card {
-  padding: 16px;
+  display: none;
 }
 
 .preset-buttons {
   display: flex;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: 6px;  /* 간격 줄임 */
+  margin-bottom: 0;  /* 하단 마진 제거 */
 }
 
 .preset-btn {
   flex: 1;
-  height: 28px;
+  height: 32px;
   padding: 0;
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--text-primary);
-  font-size: 13px; /* 12px에서 증가 */
+  font-size: 14px;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   backdrop-filter: blur(10px);
   box-shadow: var(--card-shadow);
 }
 
 .preset-btn:hover {
-  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  background: var(--primary-color);
   border-color: transparent;
   color: white;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
+}
+
+.preset-btn:active {
+  transform: translateY(1px);
 }
 
 .preset-btn.active {
-  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  background: var(--primary-color);
   border-color: transparent;
   color: white;
-  box-shadow: 0 4px 10px rgba(122, 105, 230, 0.2);
+}
+
+/* total-time 입력 스타일 */
+#total-time {
+  width: 130px;  /* 120px에서 증가 */
+  height: 28px;
+  padding: 0 4px;
+  font-size: 23px;  /* 폰트 크기 약간 감소 */
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  text-align: center;
+  letter-spacing: -0.8px;  /* 자간 조정 */
+  caret-color: var(--primary-color);
+}
+
+#total-time::-webkit-inner-spin-button,
+#total-time::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+#total-time:focus {
+  outline: none;
+  color: var(--primary-color);
+  animation: blink 1s step-end infinite; /* 커서 깜박임 효과 */
+}
+
+/* 커서 깜박임 애니메이션 */
+@keyframes blink {
+  50% { caret-color: transparent; }
+}
+
+/* 불필요한 스타일 제거 */
+.total-time-input,
+.unit {
+  display: none;
+}
+
+/* custom-time 관련 스타일 제거 */
+.custom-time,
+.input-with-label,
+.input-wrapper,
+.btn-apply {
+  display: none;
 }
 
 .custom-time {
@@ -433,45 +483,36 @@ input[type="number"]:focus {
 
 /* 앱 정보 바 */
 .app-info {
+  display: none;
+}
+
+/* 앱 하단 컨트롤 */
+.bottom-controls {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 2px;
-  margin-top: 8px;
+  gap: 8px;  /* 10px에서 감소 */
+  margin-top: 8px;  /* 12px에서 감소 */
+  padding: 0 2px;
 }
 
-.app-title {
-  font-size: 13px; /* 12px에서 증가 */
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.app-actions {
+.bottom-controls .preset-buttons {
   display: flex;
-  gap: 10px;
+  gap: 6px;
+  flex: 1;
 }
 
-.settings-btn, .app-actions a {
-  width: 28px;
+.bottom-controls .preset-btn {
+  flex: 1;
   height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
+  padding: 0;
   font-size: 13px;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  box-shadow: var(--card-shadow);
-  text-decoration: none;
+  border-radius: 8px;
 }
 
-.settings-btn:hover, .app-actions a:hover {
-  transform: translateY(-2px);
-  color: var(--primary-color);
-  box-shadow: 0 4px 8px rgba(122, 105, 230, 0.15);
+.bottom-controls .app-actions {
+  display: flex;
+  gap: 6px;  /* 8px에서 감소 */
 }
 
 /* 모달 스타일 */

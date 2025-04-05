@@ -111,31 +111,35 @@ function handleTargetTimeChange(e) {
 }
 
 function handleStart() {
+    // 입력된 시간 가져오기
     const timeValue = document.getElementById('total-time').value;
+    
     if (!isValidTime(timeValue)) {
         alert('Invalid time format. Please use HH:MM:SS format.');
         return;
     }
 
-    const targetMinutes = timerState.isRunning || timerState.pausedTime
-        ? timerState.activeTargetMinutes // 기존 값을 유지
-        : parseInt(document.getElementById('targetTime').value, 10); // 리셋 후 targetTime 값 사용
+    // HH:MM:SS를 초로 변환
+    const [hours, minutes, seconds] = timeValue.split(':').map(Number);
+    const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
+    const totalMinutes = Math.ceil(totalSeconds / 60); // 초 단위 올림으로 분 계산
 
-    if (!isNaN(targetMinutes) && targetMinutes > 0) {
-        if (!timerState.isRunning && !timerState.pausedTime) {
-            // 리셋 후 처음 실행 시 targetTime 값을 activeTargetMinutes에 설정
-            timerState.activeTargetMinutes = targetMinutes;
-        }
+    timerState.activeTargetMinutes = totalMinutes;
+    timerState.isRunning = true;
+    timerState.startTime = Date.now();
+    timerState.pausedTime = null;
 
-        chrome.runtime.sendMessage({
-            action: 'startTimer',
-            targetMinutes: timerState.activeTargetMinutes // 항상 activeTargetMinutes 사용
-        });
+    // UI 상태 변경
+    document.querySelector('.container').classList.add('running');
 
-        // total-time을 activeTargetMinutes 값으로 업데이트
-        const targetSeconds = timerState.activeTargetMinutes * 60;
-        document.getElementById('total-time').textContent = formatTime(targetSeconds);
-    }
+    // 타이머 시작 메시지 전송
+    chrome.runtime.sendMessage({
+        action: 'startTimer',
+        targetMinutes: totalMinutes
+    });
+
+    // 상태 업데이트 인터벌 시작
+    startStatusUpdateInterval();
 }
 
 function handlePause() {
@@ -154,6 +158,8 @@ function handleReset() {
         alert('Invalid time format. Please use HH:MM:SS format.');
         return;
     }
+
+    document.querySelector('.container').classList.remove('running');
 
     chrome.runtime.sendMessage({ action: 'resetTimer' });
     timerState.startTime = null;
@@ -199,6 +205,12 @@ function initializeTimerState() {
             timerState.activeTargetMinutes = res.activeTargetMinutes;
 
             const targetSeconds = timerState.activeTargetMinutes * 60;
+
+            if (timerState.isRunning || timerState.pausedTime) {
+                document.querySelector('.container').classList.add('running');
+            } else {
+                document.querySelector('.container').classList.remove('running');
+            }
 
             if (timerState.isRunning) {
                 startStatusUpdateInterval();
@@ -330,7 +342,8 @@ function updatePresetButtons(presets = [30, 41, 60]) {
     const buttons = document.querySelectorAll('.preset-btn');
     buttons.forEach((button, index) => {
         const minutes = presets[index] || 30;
-        button.textContent = `${minutes}m`;  // HH:MM:SS 대신 단순히 분 단위로 표시
+        const totalSeconds = minutes * 60;
+        button.textContent = formatTime(totalSeconds);  // 분을 HH:MM:SS 형식으로 변환
         button.dataset.time = minutes;
     });
 }

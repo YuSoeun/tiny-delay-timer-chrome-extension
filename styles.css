@@ -88,28 +88,65 @@ body::after {
   margin-bottom: 8px;  /* 12px에서 감소 */
 }
 
+/* 메인 타이머 디스플레이 스타일 통일 */
 .time-display {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 12px;
   font-family: 'SF Mono', 'Consolas', monospace;
-  font-size: 28px;
+  margin-bottom: 16px;
+}
+
+#total-time, 
+#elapsed {
+  width: 160px;
+  font-size: 32px;
   font-weight: 600;
+  font-family: 'SF Mono', 'Consolas', monospace;
   font-feature-settings: "tnum";
-  letter-spacing: -0.3px;
-  margin-bottom: 4px;
+  letter-spacing: -0.5px;
+  text-align: center;
 }
 
 #elapsed {
   color: var(--primary-color);
 }
 
-.time-separator {
+#total-time {
+  height: 36px;
+  padding: 0;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  caret-color: var(--primary-color);
+}
+
+/* 하단 정보 디스플레이 통일 */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0 0;
+  padding: 0 4px;
+  font-size: 13px;
   color: var(--text-secondary);
-  font-weight: normal;
-  opacity: 0.5;
-  margin: 2 0px;
+}
+
+#total-elapsed,
+#delay {
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-feature-settings: "tnum";
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#delay {
+  color: var(--danger-color);
+}
+
+#total-elapsed {
+  color: var(--primary-color);
 }
 
 .total-time {
@@ -285,13 +322,15 @@ body::after {
   padding: 0;
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: 8px;
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 13px;  /* 14px에서 감소 */
+  font-family: 'SF Mono', 'Consolas', monospace;  /* 모노스페이스 폰트 추가 */
+  font-feature-settings: "tnum";  /* 숫자 너비 일정하게 */
   font-weight: 600;
   transition: all 0.2s ease;
-  backdrop-filter: blur(10px);
   box-shadow: var(--card-shadow);
+  min-width: 80px;  /* 최소 너비 설정 */
 }
 
 .preset-btn:hover {
@@ -313,17 +352,17 @@ body::after {
 
 /* total-time 입력 스타일 */
 #total-time {
-  width: 130px;  /* 120px에서 증가 */
+  width: 160px;  /* 너비 증가 */
   height: 28px;
   padding: 0 4px;
-  font-size: 23px;  /* 폰트 크기 약간 감소 */
+  font-size: 36px;  /* 크기 증가 */
   font-family: 'SF Mono', 'Consolas', monospace;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   background: transparent;
   border: none;
   text-align: center;
-  letter-spacing: -0.8px;  /* 자간 조정 */
+  letter-spacing: -0.5px;  /* 자간 조정 */
   caret-color: var(--primary-color);
 }
 
@@ -488,31 +527,136 @@ input[type="number"]:focus {
 
 /* 앱 하단 컨트롤 */
 .bottom-controls {
+  display: none;
+}
+
+/* 타이머 상태에 따른 표시/숨김 처리 수정 */
+.setup-controls {
+  margin: 16px 0;
+}
+
+.timer-info {
+  display: none;
+}
+
+.container.running .setup-controls {
+  display: none;
+}
+
+.container.running .timer-info {
+  display: block;
+}
+
+/* 프리셋 버튼과 액션 버튼 레이아웃 */
+.setup-controls {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.setup-controls .preset-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.setup-controls .preset-btn {
+  flex: 1;
+  height: 32px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.setup-controls .app-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* 프리셋 및 설정 버튼 레이아웃 */
+.controls-row {
+  display: flex;
   align-items: center;
-  gap: 8px;  /* 10px에서 감소 */
-  margin-top: 8px;  /* 12px에서 감소 */
-  padding: 0 2px;
+  gap: 8px;
 }
 
-.bottom-controls .preset-buttons {
+.preset-buttons {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex: 1;
 }
 
-.bottom-controls .preset-btn {
+.preset-btn {
   flex: 1;
-  height: 28px;
-  padding: 0;
-  font-size: 13px;
+  height: 32px;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  box-shadow: var(--card-shadow);
 }
 
-.bottom-controls .app-actions {
+.settings-btn {
+  width: 32px;
+  height: 32px;
   display: flex;
-  gap: 6px;  /* 8px에서 감소 */
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-shadow: var(--card-shadow);
+}
+
+/* 앱 하단 정보 */
+.app-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px;
+}
+
+.github-link {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0.8;
+  transition: all 0.2s ease;
+}
+
+.github-link i {
+  font-size: 14px;
+}
+
+.github-link a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.github-link:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+/* 깃허브 정보 스타일 제거 */
+.github-info {
+  display: none;
+}
+
+.github-link:hover,
+.settings-btn:hover {
+  transform: translateY(-2px);
+  color: var(--primary-color);
+  box-shadow: 0 4px 8px rgba(122, 105, 230, 0.15);
 }
 
 /* 모달 스타일 */
@@ -625,4 +769,28 @@ button {
   color: var(--primary-color);
   border-color: var(--primary-color);
   transform: translateY(-2px);
+}
+
+/* 타이머 상태에 따른 표시/숨김 처리 */
+.timer-setup {
+  width: 100%;
+  text-align: center;
+}
+
+.timer-running {
+  display: none;
+  width: 100%;
+  text-align: center;
+}
+
+.container.running .timer-setup {
+  display: none;
+}
+
+.container.running .timer-running {
+  display: block;
+}
+
+.container.running .bottom-controls {
+  display: none;
 }

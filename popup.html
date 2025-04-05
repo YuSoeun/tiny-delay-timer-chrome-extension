@@ -11,13 +11,16 @@
     <div class="status-card main-card">
       <!-- 현재 타이머 상태 표시 -->
       <div class="timer-display">
-        <div class="time-display">
-          <span id="elapsed">00:00:00</span>
-          <span class="time-separator">/</span>
+        <div class="timer-setup">
           <input type="text" id="total-time" value="00:00:00" pattern="[0-9]*" inputmode="numeric" maxlength="8">
         </div>
-        
-        <!-- 정보 요약 행 (지연 시간 및 총 시간) -->
+        <div class="timer-running">
+          <span id="elapsed">00:00:00</span>
+        </div>
+      </div>
+
+      <div class="timer-info">
+        <!-- 정보 요약 행 -->
         <div class="info-row">
           <div class="total-time-info">
             <i class="bi bi-clock-history"></i>
@@ -28,12 +31,12 @@
             Delayed <span id="delay" class="delay-time">(+00:00:00)</span>
           </div>
         </div>
-      </div>
-      
-      <!-- 진행 바 -->
-      <div class="progress-bar">
-        <div class="progress" id="elapsed-progress"></div>
-        <div class="progress delay-progress" id="delay-progress"></div>
+        
+        <!-- 진행 바 -->
+        <div class="progress-bar">
+          <div class="progress" id="elapsed-progress"></div>
+          <div class="progress delay-progress" id="delay-progress"></div>
+        </div>
       </div>
       
       <!-- 컨트롤 버튼 -->
@@ -49,22 +52,25 @@
         </button>
       </div>
     </div>
-    
-    <!-- 앱 하단 컨트롤 -->
-    <div class="bottom-controls">
-      <div class="preset-buttons">
-        <button class="preset-btn" data-time="30">30m</button>
-        <button class="preset-btn" data-time="41">41m</button>
-        <button class="preset-btn" data-time="60">60m</button>
-      </div>
-      <div class="app-actions">
+
+    <!-- 타이머 실행 전/후 상태에 따라 다른 UI 표시 -->
+    <div class="setup-controls">
+      <div class="controls-row">
+        <div class="preset-buttons">
+          <button class="preset-btn" data-time="30">30m</button>
+          <button class="preset-btn" data-time="41">41m</button>
+          <button class="preset-btn" data-time="60">60m</button>
+        </div>
         <button class="settings-btn" title="Edit time presets">
           <i class="bi bi-gear"></i>
         </button>
-        <a href="https://github.com/YuSoeun/tiny-delay-timer-chrome-extension" target="_blank">
-          <i class="bi bi-github"></i>
-        </a>
       </div>
+    </div>
+    
+    <!-- 깃허브 링크 -->
+    <div class="github-link">
+      <i class="bi bi-github"></i>
+      <a href="https://github.com/YuSoeun/tiny-delay-timer-chrome-extension" target="_blank">doplinblue</a>
     </div>
     
     <!-- 설정 모달 -->

@@ -142,15 +142,15 @@ function startStatusUpdateInterval() {
 }
 
 function updateUIFromStatus(remaining, delay, targetSeconds) {
-    const totalSeconds = timerState.activeTargetMinutes * 60; // 현재 설정된 총 시간
+    const totalSeconds = timerState.activeTargetMinutes * 60;
     document.getElementById('elapsed').textContent = formatTime(remaining);
-    document.getElementById('delay').textContent = delay > 0 ? `+${formatTime(delay)}` : '00:00';
+    document.getElementById('delay').textContent = delay > 0 ? `(+${formatTime(delay)})` : '';
 
     // 총 소요 시간 계산 및 표시 (elapsed + delay)
     const totalElapsed = (totalSeconds - remaining) + delay;
     document.getElementById('total-elapsed').textContent = formatTime(totalElapsed);
 
-    // 프로그래스 바 계산을 총 시간 기준으로 변경
+    // 프로그레스 바 업데이트
     const progress = Math.max((remaining / totalSeconds) * 100, 0);
     document.getElementById('elapsed-progress').style.width = `${Math.floor(progress)}%`;
 

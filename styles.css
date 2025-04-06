@@ -748,3 +748,13 @@ input[type="number"]:focus {
   letter-spacing: -0.8px; /* 글자 간격 조정 */
   color: var(--text-primary); /* 원하는 색상으로 변경 */
 }
+
+/* Ensure elapsed element has the correct color */
+#running-state #elapsed {
+  color: var(--text-primary) !important; /* 강제로 적용 */
+}
+
+/* Make large timer use text-primary color too */
+.large-timer {
+  color: var(--text-primary); /* 원하는 색상으로 변경 */
+}

@@ -89,11 +89,11 @@
   box-shadow: 0 8px 20px rgba(138, 123, 255, 0.15), 0 3px 8px rgba(138, 123, 255, 0.1); /* Colorful shadow */
   border: 1px solid rgba(255, 255, 255, 0.7); /* Lighter border */
   overflow: hidden;
-  max-height: 220px; /* Ensure it fits within vertical constraints */
+  max-height: 200px; /* 세로 길이 줄임 */
 }
 
 #presetModal .modal-header {
-  padding: 8px 12px;
+  padding: 6px 12px; /* 패딩 줄임 */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -114,6 +114,20 @@
 #presetModal .modal-header h3 i {
   color: var(--primary-color);
   font-size: 14px; /* Slightly larger icon */
+}
+
+/* 헤더 버튼 컨테이너 */
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 작은 프라이머리 버튼 */
+.btn-small {
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 4px;
 }
 
 #presetModal .close-btn {
@@ -143,8 +157,8 @@
 
 /* Ultra-compact Preset Edit Rows */
 .preset-edit {
-  margin-bottom: 6px; /* Slightly more spacing */
-  padding: 4px 6px; /* More padding */
+  margin-bottom: 4px; /* 세로 간격 줄임 */
+  padding: 2px 6px; /* 세로 패딩 줄임 */
   display: flex;
   align-items: center;
   border-bottom: 1px solid rgba(138, 123, 255, 0.07); /* Very subtle divider */
@@ -181,7 +195,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 3px 5px;
+  padding: 2px 5px; /* 세로 패딩 줄임 */
   border-radius: 6px; /* Rounder corners */
   border: 1px solid rgba(138, 123, 255, 0.15); /* Colorful border */
   background: rgba(255, 255, 255, 0.9); /* Brighter inputs */
@@ -204,7 +218,7 @@
   font-size: 14px; /* Slightly larger */
   font-weight: 600;
   font-family: 'SF Mono', 'Consolas', monospace;
-  padding: 1px 0;
+  padding: 0; /* 패딩 제거 */
   text-align: center;
 }
 
@@ -258,14 +272,9 @@
   display: none;
 }
 
-/* Footer styling */
+/* Footer styling - 사용 안 함 */
 #presetModal .modal-footer {
-  padding: 7px 12px;
-  border-top: 1px solid rgba(138, 123, 255, 0.1);
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  background: rgba(249, 248, 255, 0.8); /* Light footer background */
+  display: none; /* 푸터 숨김 */
 }
 
 /* Button styling */

@@ -640,7 +640,8 @@ function updateUIFromStatus(remaining, delay, totalSeconds) {
       elements.totalElapsed.textContent = formatTime(total);
     }
 
-    const progress = ((totalSeconds - remaining) / totalSeconds) * 100;
+    // 남은 시간에 따라 progress bar를 줄어들게 (remaining / totalSeconds)
+    const progress = (remaining / totalSeconds) * 100;
     const delayProgress = (delay / totalSeconds) * 100;
     
     if (elements.elapsedProgress) {

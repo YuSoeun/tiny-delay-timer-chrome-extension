@@ -663,7 +663,7 @@ function updateUIFromStatus(remaining, delay, totalSeconds) {
         elements.elapsed.style.color = 'var(--danger-color)'; // 지연 상태일 때는 분홍색으로 변경
       } else {
         elements.elapsed.textContent = formatTime(remaining);
-        elements.elapsed.style.color = 'var(--primary-color)'; // 정상 상태일 때는 원래 색상으로 복원
+        elements.elapsed.style.color = 'var(--text-primary)'; // 정상 상태일 때는 원래 색상으로 복원
       }
     }
     

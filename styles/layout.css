@@ -1,7 +1,7 @@
 html {
   overflow: hidden;
   width: 320px;
-  height: 280px;
+  height: 210px; /* 220px에서 210px로 추가 감소 */
 }
 
 /* Add any other layout-specific styles here */
@@ -26,7 +26,7 @@ html {
   font-size: 2.2rem;
   font-weight: 700;
   font-family: 'SF Mono', 'Consolas', monospace;
-  color: var(--primary-color);
+  color: var(--text-primary);
   text-align: center;
   margin: 15px 0;
   letter-spacing: -0.5px;
@@ -36,7 +36,7 @@ html {
   font-size: 2.2rem;
   font-weight: 700;
   font-family: 'SF Mono', 'Consolas', monospace;
-  color: var(--primary-color);
+  color: var(--text-primary);
   text-align: center;
   margin: 15px 0;
   letter-spacing: -0.5px;
@@ -48,7 +48,7 @@ html {
   font-size: 2.2rem;
   font-weight: 700;
   font-family: 'SF Mono', 'Consolas', monospace;
-  color: var(--primary-color);
+  color: var(--text-primary);
   margin: 15px 0;
   letter-spacing: -0.5px;
   width: 100%;

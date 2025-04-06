@@ -54,9 +54,10 @@ body::after {
 }
 
 .container {
-  width: 296px;  /* 276px에서 증가 */
+  width: 296px;
+  height: 220px;
   padding: 12px;
-  max-height: 280px;  /* 380px에서 감소 */
+  max-height: 220px;
   position: relative;
   z-index: 1;
   overflow: hidden;
@@ -614,6 +615,8 @@ input[type="number"]:focus {
   color: var(--text-secondary);
   opacity: 0.8;
   transition: all 0.2s ease;
+  margin-top: 8px;
+  margin-bottom: 8px;
 }
 
 .github-link i {

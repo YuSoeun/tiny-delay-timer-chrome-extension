@@ -1,0 +1,75 @@
+/* 프리셋 버튼 레이아웃 */
+.preset-buttons {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 0;
+}
+
+.preset-btn {
+  flex: 1;
+  height: 32px;
+  padding: 0;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-feature-settings: "tnum";
+  transition: all 0.2s ease;
+  box-shadow: var(--card-shadow);
+  min-width: 80px;
+}
+
+.preset-btn:hover {
+  background: var(--primary-color);
+  border-color: transparent;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.preset-btn:active {
+  transform: translateY(1px);
+}
+
+.preset-btn.active {
+  background: var(--primary-color);
+  border-color: transparent;
+  color: white;
+}
+
+/* 설정 버튼 */
+.settings-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-shadow: var(--card-shadow);
+}
+
+.settings-btn:hover {
+  transform: translateY(-2px);
+  color: var(--primary-color);
+  box-shadow: 0 4px 8px rgba(122, 105, 230, 0.15);
+}
+
+/* 프리셋 컨트롤 레이아웃 */
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.setup-controls {
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

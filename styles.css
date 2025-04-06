@@ -363,45 +363,6 @@ body::after {
   display: none;
 }
 
-.preset-buttons {
-  display: flex;
-  gap: 6px;  /* 간격 줄임 */
-  margin-bottom: 0;  /* 하단 마진 제거 */
-}
-
-.preset-btn {
-  flex: 1;
-  height: 32px;
-  padding: 0;
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-size: 13px;  /* 14px에서 감소 */
-  font-family: 'SF Mono', 'Consolas', monospace;  /* 모노스페이스 폰트 추가 */
-  font-feature-settings: "tnum";  /* 숫자 너비 일정하게 */
-  transition: all 0.2s ease;
-  box-shadow: var(--card-shadow);
-  min-width: 80px;  /* 최소 너비 설정 */
-}
-
-.preset-btn:hover {
-  background: var(--primary-color);
-  border-color: transparent;
-  color: white;
-  transform: translateY(-1px);
-}
-
-.preset-btn:active {
-  transform: translateY(1px);
-}
-
-.preset-btn.active {
-  background: var(--primary-color);
-  border-color: transparent;
-  color: white;
-}
-
 /* total-time 입력 스타일 */
 #total-time {
   width: 160px;  /* 너비 증가 */
@@ -607,18 +568,6 @@ input[type="number"]:focus {
   gap: 12px;
 }
 
-.setup-controls .preset-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.setup-controls .preset-btn {
-  flex: 1;
-  height: 32px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
 .setup-controls .app-actions {
   display: flex;
   justify-content: center;
@@ -630,25 +579,6 @@ input[type="number"]:focus {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.preset-buttons {
-  display: flex;
-  gap: 8px;
-  flex: 1;
-}
-
-.preset-btn {
-  flex: 1;
-  height: 32px;
-  font-size: 14px;
-  font-weight: 600;
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-primary);
-  transition: all 0.2s ease;
-  box-shadow: var(--card-shadow);
 }
 
 .settings-btn {
@@ -706,8 +636,6 @@ input[type="number"]:focus {
   box-shadow: 0 4px 8px rgba(122, 105, 230, 0.15);
 }
 
-/* 모달 관련 스타일 제거 - modal.css로 이동 */
-
 /* 타이머 상태에 따른 표시/숨김 처리 */
 .timer-setup {
   width: 100%;
@@ -732,45 +660,84 @@ input[type="number"]:focus {
   display: none;
 }
 
-/* 타이머 슬라이더 모달 스타일 */
-.timer-modal {
-  width: 300px;
-  transform: none;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
+/* 클릭 가능한 요소 스타일 */
+.clickable {
+  cursor: pointer;
 }
 
-.timer-slider {
-  width: 100%;
-  margin: 20px 0;
-  accent-color: var(--primary-color);
+.clickable:hover {
+  opacity: 0.8;
 }
 
-.timer-time {
+.timer-display.clickable {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.timer-display.clickable:hover {
+  opacity: 0.8;
+}
+
+#timerDisplay {
+  font-family: 'SF Mono', 'Consolas', monospace;
   font-size: 32px;
   font-weight: 600;
-  font-family: 'SF Mono', 'Consolas', monospace;
-  text-align: center;
-  color: var(--primary-color);
-  margin: 10px 0;
-}
-
-#timerSliderHeader {
-  cursor: move;
-  user-select: none;
-  font-weight: 600;
-  font-size: 16px;
   color: var(--text-primary);
 }
 
-.modal-background {
+/* 숨겨진 입력 필드를 위한 스타일 */
+.hidden-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* 모달 스타일 */
+.modal {
+  display: none;
   position: fixed;
-  top: 0;
+  z-index: 1000;
   left: 0;
+  top: 0;
   width: 100%;
   height: 100%;
-  background: rgba(51, 51, 68, 0.5);
-  backdrop-filter: blur(4px);
-  display: none;
-  z-index: 999;
+  background-color: rgba(0, 0, 0, 0.4);
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-content {
+  background-color: var(--card-bg);
+  padding: 20px;
+  border-radius: 12px;
+  width: 80%;
+  max-width: 350px;
+  border: 1px solid var(--border-color);
+}
+
+.preset-edit {
+  margin-bottom: 12px;
+}
+
+.preset-edit label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.preset-edit input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
 }

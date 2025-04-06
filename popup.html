@@ -1,17 +1,14 @@
 <!DOCTYPE html>
-<html style="overflow: hidden; width: 320px; height: 280px;">
+<html>
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="styles/modal.css">
-  <script type="module">
-    import { PresetModal } from './modals/preset-modal.js';
-    import { TimePickerModal } from './modals/time-picker-modal.js';
-    
-    window.presetModal = new PresetModal();
-    window.timePickerModal = new TimePickerModal();
-  </script>
+  <link rel="stylesheet" href="styles/timepicker.css">
+  <link rel="stylesheet" href="styles/preset.css">
+  <link rel="stylesheet" href="styles/layout.css">
 </head>
 <body>
   <div class="container">
@@ -23,14 +20,18 @@
       <div class="modal-header">
         <div class="input-group">
           <input id="hourInput" type="number" min="0" max="23" value="00">
-          <span>:</span>
+          <span class="time-separator">:</span>
           <input id="minuteInput" type="number" min="0" max="59" value="00">
+          <span class="time-separator">:</span>
+          <input id="secondInput" type="number" min="0" max="59" value="00">
         </div>
       </div>
       <div class="time-picker-container">
         <div class="scroll-container" id="hourContainer"></div>
-        <span>:</span>
+        <span class="time-separator">:</span>
         <div class="scroll-container" id="minuteContainer"></div>
+        <span class="time-separator">:</span>
+        <div class="scroll-container" id="secondContainer"></div>
         <div class="selection-overlay"></div>
       </div>
       <div class="modal-footer">
@@ -40,10 +41,11 @@
 
     <!-- 메인 카드: 타이머 정보 및 컨트롤 -->
     <div class="status-card main-card">
-      <div class="timer-display" id="timerDisplayContainer">
-        <div id="timerDisplay">00:00:00</div>
-      </div>
-
+      <!-- 타이머 시간 설정을 위한 input 추가 (hidden 클래스 사용) -->
+      <input type="text" id="total-time" value="00:30:00" class="hidden-input">
+      
+      <div class="timer-display clickable" id="timerDisplay">00:30:00</div>
+      <div id="elapsed">00:00:00</div>
       <div class="timer-info">
         <!-- 정보 요약 행 -->
         <div class="info-row">
@@ -76,13 +78,41 @@
     <div class="setup-controls">
       <div class="controls-row">
         <div class="preset-buttons">
-          <button class="preset-btn" data-time="30">30m</button>
-          <button class="preset-btn" data-time="41">41m</button>
-          <button class="preset-btn" data-time="60">60m</button>
+          <button class="preset-btn" data-time="30">00:30:00</button>
+          <button class="preset-btn" data-time="41">00:41:00</button>
+          <button class="preset-btn" data-time="60">01:00:00</button>
         </div>
         <button class="settings-btn" title="Edit time presets">
           <i class="bi bi-gear"></i>
         </button>
+      </div>
+    </div>
+    
+    <!-- 프리셋 설정 모달 추가 -->
+    <div id="presetModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Edit Presets</h3>
+          <button class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="preset-edit">
+            <label>Preset 1 (minutes)</label>
+            <input type="number" id="preset1" min="1" max="180" value="30">
+          </div>
+          <div class="preset-edit">
+            <label>Preset 2 (minutes)</label>
+            <input type="number" id="preset2" min="1" max="180" value="41">
+          </div>
+          <div class="preset-edit">
+            <label>Preset 3 (minutes)</label>
+            <input type="number" id="preset3" min="1" max="180" value="60">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelPresets" class="btn">Cancel</button>
+          <button id="savePresets" class="btn-primary">Save</button>
+        </div>
       </div>
     </div>
     
@@ -92,6 +122,6 @@
       <a href="https://github.com/YuSoeun/tiny-delay-timer-chrome-extension" target="_blank">doplinblue</a>
     </div>
   </div>
-  <script src="popup.js"></script>
+  <script type="module" src="popup.js"></script>
 </body>
 </html>

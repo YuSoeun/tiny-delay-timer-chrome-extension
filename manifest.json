@@ -4,8 +4,7 @@
     "version": "1.0",
     "description": "A tiny timer for tracking delays",
     "permissions": [
-        "storage",
-        "action"
+        "storage"
     ],
     "action": {
         "default_popup": "popup.html",
@@ -13,9 +12,7 @@
             "16": "icons/icon16.png",
             "48": "icons/icon48.png",
             "128": "icons/icon128.png"
-        },
-        "default_width": 280,
-        "default_height": 350
+        }
     },
     "background": {
         "service_worker": "background.js",
@@ -25,5 +22,8 @@
         "16": "icons/icon16.png",
         "48": "icons/icon48.png",
         "128": "icons/icon128.png"
+    },
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src https://fonts.gstatic.com https://cdn.jsdelivr.net data:;"
     }
 }

@@ -120,6 +120,19 @@ function updateBadge() {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'startTimer') {
         startTimer(message.targetMinutes);
+    } else if (message.action === 'resumeTimer') {
+        // 일시정지 후 재개 처리
+        if (timerState.pausedTime) {
+            // 일시정지 상태에서 경과한 시간만큼 startTime 조정
+            const pausedDuration = message.pausedDuration || (Date.now() - timerState.pausedTime);
+            timerState.startTime += pausedDuration;
+            timerState.pausedTime = null;
+            timerState.isRunning = true;
+            
+            // 상태 저장 및 타이머 업데이트 시작
+            saveState();
+            timerState.intervalId = setInterval(updateBadge, 1000);
+        }
     } else if (message.action === 'pauseTimer') {
         pauseTimer();
     } else if (message.action === 'resetTimer') {

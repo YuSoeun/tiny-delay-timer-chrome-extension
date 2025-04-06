@@ -66,9 +66,6 @@ async function initializeUI() {
       resetBtn: document.getElementById('resetBtn'),
       totalTimeInput: document.getElementById('total-time'),
       targetTime: document.getElementById('targetTime'),
-      startBtn: document.getElementById('start'),
-      pauseBtn: document.getElementById('pause'),
-      resetBtn: document.getElementById('reset'),
       timeSlider: document.getElementById('time-slider'),
       settingsBtn: document.querySelector('.settings-btn')
     };
@@ -99,10 +96,8 @@ async function initializeUI() {
       });
     }
 
-    // Initialize control buttons if they exist
-    if (elements.playBtn) elements.playBtn.addEventListener('click', handleStart);
-    if (elements.pauseBtn) elements.pauseBtn.addEventListener('click', handlePause);
-    if (elements.resetBtn) elements.resetBtn.addEventListener('click', handleReset);
+    // 버튼 이벤트 리스너는 setupEventListeners에서만 설정하도록 수정
+    // 여기서는 요소만 확인하고 반환
 
     return elements;
   } catch (err) {
@@ -128,8 +123,9 @@ function setupEventListeners(elements) {
         elements.targetTime.addEventListener('input', handleTargetTimeChange);
     }
     
-    if (elements.startBtn) {
-        elements.startBtn.addEventListener('click', handleStart);
+    // playBtn, pauseBtn, resetBtn 이벤트 리스너 설정
+    if (elements.playBtn) {
+        elements.playBtn.addEventListener('click', handleStart);
     }
     
     if (elements.pauseBtn) {
@@ -397,6 +393,30 @@ function handleStart() {
         return;
     }
 
+    // 일시정지 상태에서 다시 시작하는 경우
+    if (timerState.pausedTime !== null) {
+        console.log('Resuming from paused state');
+        
+        // 일시정지 상태에서 경과한 시간만큼 startTime을 조정
+        const pausedDuration = Date.now() - timerState.pausedTime;
+        timerState.startTime += pausedDuration;
+        timerState.pausedTime = null;
+        timerState.isRunning = true;
+
+        // UI 상태 업데이트
+        updateTimerState(TimerState.RUNNING);
+        
+        // background 서비스에 타이머 재시작 메시지 전송
+        chrome.runtime.sendMessage({
+            action: 'resumeTimer',
+            pausedDuration: pausedDuration
+        });
+        
+        startStatusUpdateInterval();
+        return;
+    }
+
+    // 새 타이머 시작
     const [hours, minutes, seconds] = timeValue.split(':').map(Number);
     const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
     
@@ -422,14 +442,33 @@ function handleStart() {
 }
 
 function handlePause() {
+    // 유효한 시간 형식인지 확인
     const timeValue = document.getElementById('total-time').value;
     if (!isValidTime(timeValue)) {
         alert('Invalid time format. Please use HH:MM:SS format.');
         return;
     }
 
+    // 타이머가 실행 중이 아니면 일시정지할 수 없음
+    if (!timerState.isRunning) {
+        console.log('Timer is not running, cannot pause');
+        return;
+    }
+    
+    // 로컬 타이머 상태 업데이트
+    timerState.isRunning = false;
+    timerState.pausedTime = Date.now();
+    
+    // background 서비스에 일시정지 메시지 전송
     chrome.runtime.sendMessage({ action: 'pauseTimer' });
+    
+    // UI 상태 업데이트
     updateTimerState(TimerState.PAUSED);
+    
+    // 진행 중이던 interval 정리
+    clearInterval(timerState.elapsedInterval);
+    
+    console.log('Timer paused successfully');
 }
 
 function handleReset() {
@@ -439,14 +478,25 @@ function handleReset() {
         return;
     }
 
-    const container = document.querySelector('.container');
-    if (container) container.classList.remove('running');
-
-    chrome.runtime.sendMessage({ action: 'resetTimer' });
+    // 타이머 상태 로컬 업데이트
     timerState.startTime = null;
     timerState.isRunning = false;
     timerState.pausedTime = null;
     timerState.activeTargetMinutes = timerState.targetMinutes;
+
+    // 백그라운드에 리셋 메시지 전송
+    chrome.runtime.sendMessage({ action: 'resetTimer' }, (response) => {
+        // 응답을 기다릴 필요는 없지만, 로그 목적으로 첨가
+        console.log('Timer reset successfully');
+    });
+    
+    // 실행 중 interval 정리
+    clearInterval(timerState.elapsedInterval);
+    
+    // UI 업데이트
+    const container = document.querySelector('.container');
+    if (container) container.classList.remove('running');
+    
     resetUI();
     updateTimerState(TimerState.IDLE);
 }

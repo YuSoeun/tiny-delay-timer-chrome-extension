@@ -1,0 +1,305 @@
+/* Preset Button Layout */
+.preset-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.preset-btn {
+  flex: 1;
+  padding: 6px 0;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.preset-btn:hover, .preset-btn.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  box-shadow: 0 3px 8px rgba(138, 123, 255, 0.25); /* Add glow effect */
+}
+
+/* Settings Button */
+.settings-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.settings-btn:hover {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+/* Preset Control Layout */
+.controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.setup-controls {
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Simplified Modal Styling */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(51, 51, 68, 0.4); /* Lighter background overlay */
+  backdrop-filter: blur(2px); /* Lighter blur effect */
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal.show {
+  display: flex;
+  animation: none;
+}
+
+/* Simplified Preset Modal */
+#presetModal .modal-content {
+  width: 280px;
+  background: rgba(255, 255, 255, 0.9); /* Brighter background */
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(138, 123, 255, 0.15), 0 3px 8px rgba(138, 123, 255, 0.1); /* Colorful shadow */
+  border: 1px solid rgba(255, 255, 255, 0.7); /* Lighter border */
+  overflow: hidden;
+  max-height: 220px; /* Ensure it fits within vertical constraints */
+}
+
+#presetModal .modal-header {
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(138, 123, 255, 0.1);
+  background: rgba(249, 248, 255, 0.8); /* Lighter header background with subtle color */
+}
+
+#presetModal .modal-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-color); /* Title uses primary color */
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#presetModal .modal-header h3 i {
+  color: var(--primary-color);
+  font-size: 14px; /* Slightly larger icon */
+}
+
+#presetModal .close-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+#presetModal .close-btn:hover {
+  color: var(--primary-color);
+}
+
+#presetModal .modal-body {
+  padding: 8px 12px; /* Slightly more padding */
+  background: rgba(253, 252, 255, 0.7); /* Brighter body background */
+}
+
+/* Ultra-compact Preset Edit Rows */
+.preset-edit {
+  margin-bottom: 6px; /* Slightly more spacing */
+  padding: 4px 6px; /* More padding */
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(138, 123, 255, 0.07); /* Very subtle divider */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.preset-edit:last-child {
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+/* Label */
+.preset-edit label {
+  width: 18px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin: 0;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+/* Time Input Wrapper */
+.time-input-wrapper {
+  flex: 1;
+  margin-left: 5px;
+  display: flex;
+  align-items: center;
+}
+
+/* Numeric Inputs */
+.time-input-wrapper .numeric-inputs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 5px;
+  border-radius: 6px; /* Rounder corners */
+  border: 1px solid rgba(138, 123, 255, 0.15); /* Colorful border */
+  background: rgba(255, 255, 255, 0.9); /* Brighter inputs */
+  flex: 1;
+}
+
+/* Hidden main input */
+.time-input-wrapper .main-input {
+  display: none;
+}
+
+/* Input fields */
+.time-input-wrapper .hour-input,
+.time-input-wrapper .minute-input,
+.time-input-wrapper .second-input {
+  width: 24px; /* Slightly wider */
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 14px; /* Slightly larger */
+  font-weight: 600;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  padding: 1px 0;
+  text-align: center;
+}
+
+.time-input-wrapper input:focus {
+  outline: none;
+  color: var(--primary-color);
+}
+
+.time-input-wrapper .time-separator {
+  font-size: 13px;
+  color: rgba(138, 123, 255, 0.5); /* Colorful separators */
+  width: 6px;
+  text-align: center;
+}
+
+/* Remove spin buttons */
+.hour-input::-webkit-inner-spin-button,
+.hour-input::-webkit-outer-spin-button,
+.minute-input::-webkit-outer-spin-button,
+.minute-input::-webkit-inner-spin-button,
+.second-input::-webkit-outer-spin-button,
+.second-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+.hour-input[type=number],
+.minute-input[type=number],
+.second-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Focus state */
+.time-input-wrapper:focus-within .numeric-inputs {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(138, 123, 255, 0.1); /* Subtle focus glow */
+}
+
+.time-input-wrapper:focus-within .time-separator {
+  color: var(--primary-color);
+}
+
+/* Hide time preview */
+.time-preview {
+  display: none;
+}
+
+/* Hide focus overlay */
+.focus-overlay {
+  display: none;
+}
+
+/* Footer styling */
+#presetModal .modal-footer {
+  padding: 7px 12px;
+  border-top: 1px solid rgba(138, 123, 255, 0.1);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  background: rgba(249, 248, 255, 0.8); /* Light footer background */
+}
+
+/* Button styling */
+.btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  border-radius: 6px; /* Rounder buttons */
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-color), #7b68ee); /* Gradient background */
+  color: white;
+  box-shadow: 0 2px 6px rgba(138, 123, 255, 0.25); /* Button shadow for depth */
+}
+
+.btn:hover {
+  opacity: 0.95;
+  transform: translateY(-1px); /* Subtle hover effect */
+}
+
+.btn-primary:hover {
+  box-shadow: 0 3px 8px rgba(138, 123, 255, 0.35); /* Enhanced shadow on hover */
+}
+
+@media (max-width: 480px) {
+  #presetModal .modal-content {
+    width: 260px;
+  }
+}

@@ -32,6 +32,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Set initial state
     document.body.classList.add('state-idle');
+
+    // Initialize time previews when the preset modal is opened
+    const settingsBtn = document.querySelector('.settings-btn');
+    if (settingsBtn) {
+      settingsBtn.addEventListener('click', function() {
+        setTimeout(() => {
+          updateTimePreview();
+          setupPresetInputs();
+        }, 100); // Update after modal is displayed
+      });
+    }
   } catch (err) {
     console.error('Error initializing popup:', err);
   }
@@ -209,7 +220,7 @@ function setupEventListeners(elements) {
         
         switch(selectedPart) {
             case 'hours':
-                newValue = Math.min(Math.max(newValue, 0), 99);
+                newValue = Math.min(Math.max(newValue, 0), 23);
                 totalTimeInput.value = formatTime(newValue * 3600 + minutes * 60 + seconds);
                 break;
             case 'minutes':
@@ -309,7 +320,7 @@ function isValidTime(timeStr) {
     
     const [hours, minutes, seconds] = parts;
     if (isNaN(hours) || isNaN(minutes) || isNaN(seconds)) return false;
-    if (hours < 0 || hours > 99) return false;
+    if (hours < 0 || hours > 23) return false;
     if (minutes < 0 || minutes >= 60) return false;
     if (seconds < 0 || seconds >= 60) return false;
     
@@ -589,35 +600,187 @@ function formatTime(seconds) {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
 
-function openPresetModal() {
-    chrome.storage.local.get(['presets'], (result) => {
-        const presets = result.presets || [30, 41, 60];
-        document.getElementById('preset1').value = presets[0];
-        document.getElementById('preset2').value = presets[1];
-        document.getElementById('preset3').value = presets[2];
+function setupPresetInputs() {
+  const presetInputs = document.querySelectorAll('.preset-edit .time-input-wrapper .main-input');
+  
+  presetInputs.forEach(input => {
+    const wrapper = input.closest('.time-input-wrapper');
+    const hourInput = wrapper.querySelector('.hour-input');
+    const minuteInput = wrapper.querySelector('.minute-input');
+    const secondInput = wrapper.querySelector('.second-input');
+    
+    if (!hourInput || !minuteInput || !secondInput) return;
+    
+    // Format inputs with leading zeros
+    formatTimeInput(hourInput);
+    formatTimeInput(minuteInput);
+    formatTimeInput(secondInput);
+    
+    // Add input event listeners
+    [hourInput, minuteInput, secondInput].forEach(input => {
+      // Handle input changes
+      input.addEventListener('input', () => {
+        const maxVal = input === hourInput ? 23 : 59;
+        let val = parseInt(input.value) || 0;
+        
+        // Enforce max value
+        if (val > maxVal) {
+          val = maxVal;
+          input.value = val;
+        }
+        
+        updateMainInputFromTimeInputs(wrapper);
+      });
+      
+      // Format value when input loses focus
+      input.addEventListener('blur', () => {
+        formatTimeInput(input);
+      });
+      
+      // Select all text when focused
+      input.addEventListener('focus', () => {
+        input.select();
+      });
+      
+      // Handle keyboard navigation
+      input.addEventListener('keydown', (e) => {
+        const maxVal = input === hourInput ? 23 : 59;
+        
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          let val = parseInt(input.value) || 0;
+          val = (val + 1) % (maxVal + 1);
+          input.value = String(val).padStart(2, '0');
+          updateMainInputFromTimeInputs(wrapper);
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          let val = parseInt(input.value) || 0;
+          val = (val - 1 + (maxVal + 1)) % (maxVal + 1);
+          input.value = String(val).padStart(2, '0');
+          updateMainInputFromTimeInputs(wrapper);
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          // Navigate between inputs
+          e.preventDefault();
+          const inputs = [hourInput, minuteInput, secondInput];
+          const currentIndex = inputs.indexOf(input);
+          const nextIndex = currentIndex + (e.key === 'ArrowLeft' ? -1 : 1);
+          
+          if (nextIndex >= 0 && nextIndex < inputs.length) {
+            inputs[nextIndex].focus();
+            inputs[nextIndex].select();
+          }
+        }
+      });
     });
-    document.getElementById('presetModal').classList.add('show');
+  });
+}
+
+// Helper function to format time inputs with leading zeros
+function formatTimeInput(input) {
+  const maxVal = input.classList.contains('hour-input') ? 23 : 59;
+  let val = parseInt(input.value) || 0;
+  if (val < 0) val = 0;
+  if (val > maxVal) val = maxVal;
+  input.value = String(val).padStart(2, '0');
+}
+
+function updateMainInputFromTimeInputs(wrapper) {
+  const hourInput = wrapper.querySelector('.hour-input');
+  const minuteInput = wrapper.querySelector('.minute-input');
+  const secondInput = wrapper.querySelector('.second-input');
+  const mainInput = wrapper.querySelector('.main-input');
+  
+  if (!hourInput || !minuteInput || !secondInput || !mainInput) return;
+  
+  const h = parseInt(hourInput.value) || 0;
+  const m = parseInt(minuteInput.value) || 0;
+  const s = parseInt(secondInput.value) || 0;
+  
+  // Format inputs with leading zeros
+  formatTimeInput(hourInput);
+  formatTimeInput(minuteInput);
+  formatTimeInput(secondInput);
+  
+  // Convert to total minutes, rounding up if there are seconds
+  const totalMinutes = h * 60 + m + (s > 0 ? 1 : 0);
+  mainInput.value = totalMinutes;
+}
+
+function openPresetModal() {
+  chrome.storage.local.get(['presets'], (result) => {
+    const presets = result.presets || [30, 41, 60];
+    
+    // Setup each preset
+    document.querySelectorAll('.preset-edit').forEach((preset, index) => {
+      const minutes = presets[index] || 30;
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      
+      const hourInput = preset.querySelector('.hour-input');
+      const minuteInput = preset.querySelector('.minute-input');
+      const secondInput = preset.querySelector('.second-input');
+      const mainInput = preset.querySelector('.main-input');
+      
+      if (hourInput) hourInput.value = String(hours).padStart(2, '0');
+      if (minuteInput) minuteInput.value = String(mins).padStart(2, '0');
+      if (secondInput) secondInput.value = String(mins).padStart(2, '0');
+      if (mainInput) mainInput.value = minutes;
+    });
+    
+    // Setup input handlers
+    setupPresetInputs();
+  });
+  
+  // Show modal with animation
+  const modal = document.getElementById('presetModal');
+  if (modal) {
+    modal.classList.add('show');
+    // Focus on the first hour input for immediate editing
+    setTimeout(() => {
+      const firstHourInput = modal.querySelector('.hour-input');
+      if (firstHourInput) firstHourInput.focus();
+    }, 300);
+  }
 }
 
 function closePresetModal() {
     document.getElementById('presetModal').classList.remove('show');
 }
 
+// Updated function to save preset changes
 function savePresetChanges() {
-    const presets = [
-        parseInt(document.getElementById('preset1').value, 10),
-        parseInt(document.getElementById('preset2').value, 10),
-        parseInt(document.getElementById('preset3').value, 10)
-    ].filter(val => !isNaN(val) && val > 0);
-
-    if (presets.length === 3) {
-        chrome.storage.local.set({ presets }, () => {
-            updatePresetButtons(presets);
-            closePresetModal();
-        });
-    } else {
-        alert('Please enter valid preset values (greater than 0).');
+  const presets = [];
+  
+  document.querySelectorAll('.preset-edit .time-input-wrapper').forEach(wrapper => {
+    const hourInput = wrapper.querySelector('.hour-input');
+    const minuteInput = wrapper.querySelector('.minute-input');
+    const secondInput = wrapper.querySelector('.second-input');
+    
+    if (hourInput && minuteInput && secondInput) {
+      const h = parseInt(hourInput.value) || 0;
+      const m = parseInt(minuteInput.value) || 0;
+      const s = parseInt(secondInput.value) || 0;
+      
+      // Convert to total minutes, rounding up if there are seconds
+      const totalMinutes = h * 60 + m + (s > 0 ? 1 : 0);
+      presets.push(totalMinutes);
     }
+  });
+  
+  // Ensure we have exactly 3 presets
+  while (presets.length < 3) {
+    presets.push(30); // Default value
+  }
+  
+  // Update all presets
+  if (presets.every(val => !isNaN(val) && val > 0)) {
+    chrome.storage.local.set({ presets }, () => {
+      updatePresetButtons(presets);
+      closePresetModal();
+    });
+  } else {
+    alert('Please enter valid preset values (greater than 0).');
+  }
 }
 
 function updatePresetButtons(presets = [30, 41, 60]) {
@@ -683,4 +846,22 @@ function setupTimerSlider() {
             e.stopPropagation();
         }
     });
+}
+
+function updateTimePreview() {
+  const presetEdits = document.querySelectorAll('.preset-edit');
+  
+  presetEdits.forEach(presetEdit => {
+    const hourInput = presetEdit.querySelector('.hour-input');
+    const minuteInput = presetEdit.querySelector('.minute-input');
+    const secondInput = presetEdit.querySelector('.second-input');
+    const timePreview = presetEdit.querySelector('.time-preview');
+    
+    if (hourInput && minuteInput && secondInput && timePreview) {
+      const h = parseInt(hourInput.value) || 0;
+      const m = parseInt(minuteInput.value) || 0;
+      const s = parseInt(secondInput.value) || 0;
+      timePreview.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+  });
 }

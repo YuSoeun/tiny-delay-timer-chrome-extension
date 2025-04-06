@@ -1,0 +1,102 @@
+html {
+  overflow: hidden;
+  width: 320px;
+  height: 280px;
+}
+
+/* Add any other layout-specific styles here */
+
+/* 타이머 상태 관리 */
+.timer-state {
+  display: none;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.3s ease, max-height 0.3s ease;
+}
+
+.timer-state.active {
+  display: block;
+  opacity: 1;
+  max-height: 200px; /* 충분한 높이로 설정 */
+}
+
+/* 실행 중인 타이머 스타일 */
+.running-time {
+  font-size: 2.2rem;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  color: var(--primary-color);
+  text-align: center;
+  margin: 15px 0;
+  letter-spacing: -0.5px;
+}
+
+#running-state #elapsed {
+  font-size: 2.2rem;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  color: var(--primary-color);
+  text-align: center;
+  margin: 15px 0;
+  letter-spacing: -0.5px;
+}
+
+/* Center the elapsed time display */
+#elapsed {
+  text-align: center;
+  font-size: 2.2rem;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  color: var(--primary-color);
+  margin: 15px 0;
+  letter-spacing: -0.5px;
+  width: 100%;
+  display: block;
+}
+
+/* 프리셋 컨트롤 표시 관리 */
+/* Setup controls visibility */
+.setup-controls {
+  display: block;
+  opacity: 1;
+  max-height: 80px;
+  overflow: hidden;
+  transition: opacity 0.3s ease, max-height 0.3s ease;
+}
+
+/* Hide setup controls when not in IDLE state */
+body:not(.state-idle) .setup-controls,
+.setup-controls.hidden {
+  opacity: 0;
+  max-height: 0;
+  pointer-events: none;
+}
+
+/* Show setup controls only in IDLE state */
+body.state-idle .setup-controls {
+  opacity: 1;
+  max-height: 80px;
+  pointer-events: auto;
+}
+
+/* 컨트롤 버튼 가시성 */
+.timer-controls button {
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.timer-controls button.enabled {
+  opacity: 1;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.timer-controls button.enabled:hover {
+  transform: scale(1.05);
+}
+
+.timer-controls button.enabled:active {
+  transform: scale(0.95);
+}

@@ -431,6 +431,10 @@ function handleStart() {
     const elapsedElement = document.getElementById('elapsed');
     if (elapsedElement) elapsedElement.textContent = formatTime(totalSeconds);
 
+    // 목표 시간 업데이트
+    const targetTimeElement = document.getElementById('target-time');
+    if (targetTimeElement) targetTimeElement.textContent = formatTime(totalSeconds);
+
     chrome.runtime.sendMessage({
         action: 'startTimer',
         targetMinutes: timerState.activeTargetMinutes,
@@ -574,6 +578,12 @@ function initializeTimerState() {
                 }
             }
 
+            // 목표 시간 업데이트
+            const targetTimeElement = document.getElementById('target-time');
+            if (targetTimeElement) {
+                targetTimeElement.textContent = formatTime(targetSeconds);
+            }
+
             if (timerState.isRunning) {
                 updateTimerState(TimerState.RUNNING);
                 startStatusUpdateInterval();
@@ -628,11 +638,18 @@ function updateUIFromStatus(remaining, delay, totalSeconds) {
     };
 
     if (elements.elapsed) {
-      elements.elapsed.textContent = formatTime(remaining);
+      // 남은 시간이 0이고 지연이 발생했으면 지연 시간을 표시
+      if (remaining === 0 && delay > 0) {
+        elements.elapsed.textContent = `+ ${formatTime(delay)}`;
+        elements.elapsed.style.color = 'var(--danger-color)'; // 지연 상태일 때는 분홍색으로 변경
+      } else {
+        elements.elapsed.textContent = formatTime(remaining);
+        elements.elapsed.style.color = 'var(--primary-color)'; // 정상 상태일 때는 원래 색상으로 복원
+      }
     }
     
     if (elements.delay) {
-      elements.delay.textContent = delay > 0 ? `+${formatTime(delay)}` : '';
+      elements.delay.textContent = delay > 0 ? `+ ${formatTime(delay)}` : '';
     }
     
     if (elements.totalElapsed) {

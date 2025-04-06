@@ -192,27 +192,19 @@ body::after {
 /* 하단 정보 디스플레이 통일 */
 .info-row {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around; /* 각 항목을 균등하게 배치 */
   align-items: center;
-  margin: 8px 0 0;
   padding: 0 4px;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary);
+  line-height: 1;
 }
 
-#total-elapsed,
-#delay {
+#total-elapsed {
   font-family: 'SF Mono', 'Consolas', monospace;
   font-feature-settings: "tnum";
   font-size: 13px;
   font-weight: 600;
-}
-
-#delay {
-  color: var(--danger-color);
-}
-
-#total-elapsed {
   color: var(--primary-color);
 }
 
@@ -222,27 +214,15 @@ body::after {
 }
 
 .delay-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 12px; /* 11px에서 증가 */
-  color: var(--text-secondary);
-  margin-top: 8px;
+  display: none; /* Changed from flex to none to hide the delay indicator */
 }
 
 .delay-indicator i {
-  color: var(--danger-color);
-  font-size: 12px; /* 11px에서 증가 */
+  display: none;
 }
 
 .delay-time {
-  color: var(--danger-color);
-  font-weight: 600;
-}
-
-.delay-time.delayed {
-  color: var(--danger-color);
+  display: none; /* Hide delay time */
 }
 
 .progress-bar {
@@ -286,28 +266,27 @@ body::after {
 /* Info row */
 .info-row {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around; /* 각 항목을 균등하게 배치 */
   align-items: center;
-  margin: 8px 0 0;
   padding: 0 4px;
-  font-size: 12px; /* 11px에서 증가 */
+  font-size: 12px;
   color: var(--text-secondary);
   line-height: 1;
 }
 
 .total-time-info,
-.delay-indicator {
+.target-time-info {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px; /* 11px에서 증가 */
-  min-width: 100px;  /* 80px에서 증가 */
+  font-size: 12px;
+  min-width: auto; /* 최소 너비 제거하여 자연스럽게 배치 */
   height: 16px;
 }
 
 .total-time-info i,
-.delay-indicator i {
-  font-size: 12px; /* 11px에서 증가 */
+.target-time-info i {
+  font-size: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -315,15 +294,27 @@ body::after {
 }
 
 #total-elapsed,
-#delay {
+#target-time {
   color: var(--primary-color);
   font-weight: 600;
   font-feature-settings: "tnum";
   font-family: 'SF Mono', 'Consolas', monospace;
 }
 
+#target-time {
+  color: var(--primary-color);
+}
+
 #delay {
-  color: var(--danger-color);
+  display: none; /* Hide delay element */
+}
+
+/* 타이머 정보 컨테이너 */
+.timer-info-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 
 /* 메인 컨트롤 버튼 */

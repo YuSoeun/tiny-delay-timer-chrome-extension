@@ -52,15 +52,26 @@
       <div id="running-state" class="timer-state">
         <div id="elapsed">00:00:00</div>
         <div class="timer-info">
-          <!-- 정보 요약 행 -->
-          <div class="info-row">
-            <div class="total-time-info">
-              <i class="bi bi-clock-history"></i>
-              Total <span id="total-elapsed">00:00:00</span>
+          <!-- 정보 요약 두 줄로 구성 -->
+          <div class="timer-info-container">
+            <!-- 첫 번째 행: Total과 Target 정보 -->
+            <div class="info-row">
+              <div class="time-info-item">
+                <i class="bi bi-clock-history"></i>
+                Total <span id="total-elapsed">00:00:00</span>
+              </div>
+              <div class="time-info-item">
+                <i class="bi bi-stopwatch"></i>
+                Target <span id="target-time">00:30:00</span>
+              </div>
             </div>
-            <div class="delay-indicator">
-              <i class="bi bi-exclamation-circle"></i>
-              Delayed <span id="delay" class="delay-time">+00:00:00</span>
+            
+            <!-- 두 번째 행: Delay 정보 -->
+            <div class="info-row">
+              <div class="delay-indicator">
+                <i class="bi bi-exclamation-circle"></i>
+                Delayed <span id="delay" class="delay-time">+ 00:00:00</span>
+              </div>
             </div>
           </div>
           

@@ -1,6 +1,16 @@
 import { PresetModal } from './modals/preset-modal.js';
 import { TimePickerModal } from './modals/time-picker-modal.js';
 
+// Define the timer state constants at the top level so they're accessible everywhere
+const TimerState = {
+  IDLE: 'idle',
+  RUNNING: 'running',
+  PAUSED: 'paused'
+};
+
+// Keep track of current state
+let currentState = TimerState.IDLE;
+
 let timerState = {
     targetMinutes: 30,
     startTime: null,
@@ -19,6 +29,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize event listeners after UI elements are ready
     await setupEventListeners(elements);
     await initializeTimerState();
+
+    // Set initial state
+    document.body.classList.add('state-idle');
   } catch (err) {
     console.error('Error initializing popup:', err);
   }
@@ -311,6 +324,60 @@ function handleTargetTimeChange(e) {
     }
 }
 
+// 타이머 상태 업데이트 함수
+function updateTimerState(newState) {
+  // Remove all state classes
+  document.body.classList.remove('state-idle', 'state-running', 'state-paused');
+  
+  // Add the new state class
+  document.body.classList.add(`state-${newState}`);
+  
+  // DOM 요소 참조
+  const idleState = document.getElementById('idle-state');
+  const runningState = document.getElementById('running-state');
+  const playBtn = document.getElementById('playBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  
+  // 버튼 상태 초기화
+  [playBtn, pauseBtn, resetBtn].forEach(btn => btn.classList.remove('enabled'));
+  
+  // 새 상태에 따른 UI 업데이트
+  switch(newState) {
+    case TimerState.IDLE:
+      // IDLE 상태에서는 타이머 표시(idle-state)를 보여주고 running-state는 숨김
+      idleState.classList.add('active');
+      runningState.classList.remove('active');
+      
+      // 재생 버튼만 활성화
+      playBtn.classList.add('enabled');
+      break;
+      
+    case TimerState.RUNNING:
+      // RUNNING 상태에서는 타이머 표시(idle-state)를 숨기고 running-state만 보여줌
+      idleState.classList.remove('active');
+      runningState.classList.add('active');
+      
+      // 일시정지 및 리셋 버튼 활성화
+      pauseBtn.classList.add('enabled');
+      resetBtn.classList.add('enabled');
+      break;
+      
+    case TimerState.PAUSED:
+      // PAUSED 상태에서도 타이머 표시(idle-state)를 숨기고 running-state만 보여줌
+      idleState.classList.remove('active');
+      runningState.classList.add('active');
+      
+      // 재생 및 리셋 버튼 활성화
+      playBtn.classList.add('enabled');
+      resetBtn.classList.add('enabled');
+      break;
+  }
+  
+  // 현재 상태 업데이트
+  currentState = newState;
+}
+
 function handleStart() {
     const timeValue = document.getElementById('total-time').value;
     
@@ -339,6 +406,7 @@ function handleStart() {
         totalSeconds: totalSeconds
     });
 
+    updateTimerState(TimerState.RUNNING);
     startStatusUpdateInterval();
 }
 
@@ -350,6 +418,7 @@ function handlePause() {
     }
 
     chrome.runtime.sendMessage({ action: 'pauseTimer' });
+    updateTimerState(TimerState.PAUSED);
 }
 
 function handleReset() {
@@ -368,6 +437,7 @@ function handleReset() {
     timerState.pausedTime = null;
     timerState.activeTargetMinutes = timerState.targetMinutes;
     resetUI();
+    updateTimerState(TimerState.IDLE);
 }
 
 function handlePresetClick(e) {
@@ -430,10 +500,13 @@ function initializeTimerState() {
             }
 
             if (timerState.isRunning) {
+                updateTimerState(TimerState.RUNNING);
                 startStatusUpdateInterval();
             } else if (timerState.pausedTime) {
+                updateTimerState(TimerState.PAUSED);
                 updateUIFromStatus(res.remaining, res.delay, targetSeconds);
             } else {
+                updateTimerState(TimerState.IDLE);
                 const elapsedElement = document.getElementById('elapsed');
                 if (elapsedElement) {
                     elapsedElement.textContent = '00:00:00';

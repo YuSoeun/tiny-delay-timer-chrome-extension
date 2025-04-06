@@ -41,34 +41,40 @@
 
     <!-- 메인 카드: 타이머 정보 및 컨트롤 -->
     <div class="status-card main-card">
-      <!-- 타이머 시간 설정을 위한 input 추가 (hidden 클래스 사용) -->
       <input type="text" id="total-time" value="00:30:00" class="hidden-input">
       
-      <div class="timer-display clickable" id="timerDisplay">00:30:00</div>
-      <div id="elapsed">00:00:00</div>
-      <div class="timer-info">
-        <!-- 정보 요약 행 -->
-        <div class="info-row">
-          <div class="total-time-info">
-            <i class="bi bi-clock-history"></i>
-            Total <span id="total-elapsed">00:00:00</span>
+      <!-- 타이머 표시 - IDLE 상태에서만 보임 -->
+      <div id="idle-state" class="timer-state active">
+        <div class="timer-display clickable" id="timerDisplay">00:30:00</div>
+      </div>
+      
+      <!-- 타이머 실행 중이나 일시정지 상태에서만 표시할 정보 -->
+      <div id="running-state" class="timer-state">
+        <div id="elapsed">00:00:00</div>
+        <div class="timer-info">
+          <!-- 정보 요약 행 -->
+          <div class="info-row">
+            <div class="total-time-info">
+              <i class="bi bi-clock-history"></i>
+              Total <span id="total-elapsed">00:00:00</span>
+            </div>
+            <div class="delay-indicator">
+              <i class="bi bi-exclamation-circle"></i>
+              Delayed <span id="delay" class="delay-time">(+00:00:00)</span>
+            </div>
           </div>
-          <div class="delay-indicator">
-            <i class="bi bi-exclamation-circle"></i>
-            Delayed <span id="delay" class="delay-time">(+00:00:00)</span>
+          
+          <!-- 진행 바 -->
+          <div class="progress-bar">
+            <div class="progress" id="elapsed-progress"></div>
+            <div class="progress delay-progress" id="delay-progress"></div>
           </div>
-        </div>
-        
-        <!-- 진행 바 -->
-        <div class="progress-bar">
-          <div class="progress" id="elapsed-progress"></div>
-          <div class="progress delay-progress" id="delay-progress"></div>
         </div>
       </div>
       
       <!-- 컨트롤 버튼 -->
       <div class="timer-controls">
-        <button id="playBtn"><i class="bi bi-play-fill"></i></button>
+        <button id="playBtn" class="enabled"><i class="bi bi-play-fill"></i></button>
         <button id="pauseBtn"><i class="bi bi-pause-fill"></i></button>
         <button id="resetBtn"><i class="bi bi-arrow-repeat"></i></button>
       </div>

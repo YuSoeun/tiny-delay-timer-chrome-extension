@@ -754,24 +754,64 @@ export class TimePickerModal {
     let pressTimer = null;
     let isPressing = false;
     let repeatInterval = null;
+    let accelerationTimer = null; // Timer for acceleration
+    let initialDelay = 250; // Initial delay between clicks (slower)
+    let fastDelay = 80; // Fast delay after long press
+    let currentDelay = initialDelay; // Current delay being used
+    let pressStartTime = 0;
     
     // Function to handle repeated action while pressing
     const startRepeating = (direction) => {
       // Execute the action immediately once
       callback(direction);
       
-      // Then set up an interval to repeat the action
+      // Clear any existing interval
+      if (repeatInterval) {
+        clearInterval(repeatInterval);
+      }
+      
+      // Start with normal speed
       repeatInterval = setInterval(() => {
         callback(direction);
-      }, 150); // Repeat every 150ms
+      }, currentDelay);
+      
+      // Set up acceleration timer
+      accelerationTimer = setTimeout(() => {
+        // Clear the normal speed interval
+        if (repeatInterval) {
+          clearInterval(repeatInterval);
+        }
+        
+        // Add class to indicate fast scrolling
+        container.classList.add('fast-scrolling');
+        
+        // Switch to fast speed
+        currentDelay = fastDelay;
+        repeatInterval = setInterval(() => {
+          callback(direction);
+        }, fastDelay);
+      }, 1000); // Only accelerate after 1 second of holding
     };
     
     // Function to stop repeating action
     const stopRepeating = () => {
+      // Reset all timers
       if (repeatInterval) {
         clearInterval(repeatInterval);
         repeatInterval = null;
       }
+      
+      if (accelerationTimer) {
+        clearTimeout(accelerationTimer);
+        accelerationTimer = null;
+      }
+      
+      // Reset delay to initial value for next press
+      currentDelay = initialDelay;
+      
+      // Remove visual feedback classes
+      container.classList.remove('pressing-up', 'pressing-down', 'fast-scrolling');
+      
       isPressing = false;
     };
     
@@ -789,24 +829,27 @@ export class TimePickerModal {
       if (clickY < topSection) {
         // Clicked in the top third
         direction = 'up';
+        container.classList.add('pressing-up');
       } else if (clickY > bottomSection) {
         // Clicked in the bottom third
         direction = 'down';
+        container.classList.add('pressing-down');
       }
       
       // If clicked in top or bottom section, start press-and-hold action
       if (direction) {
         isPressing = true;
+        pressStartTime = Date.now();
         
-        // Small initial delay before repeating starts
+        // Execute action once immediately
+        callback(direction);
+        
+        // Start repeating after a short delay
         pressTimer = setTimeout(() => {
           if (isPressing) {
             startRepeating(direction);
           }
-        }, 300); // Wait 300ms before starting to repeat
-        
-        // Execute action once immediately
-        callback(direction);
+        }, 300);
         
         e.preventDefault(); // Prevent text selection
       }

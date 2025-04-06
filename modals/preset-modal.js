@@ -5,9 +5,22 @@ export class PresetModal {
     }
 
     setupEventListeners() {
-        document.getElementById('cancelPresets').addEventListener('click', () => this.close());
-        document.getElementById('savePresets').addEventListener('click', () => this.save());
-        this.modal.querySelector('.close-btn').addEventListener('click', () => this.close());
+        const cancelBtn = document.getElementById('cancelPresets');
+        const saveBtn = document.getElementById('savePresets');
+        
+        // 선택적으로 이벤트 리스너 추가 (요소가 있을 경우에만)
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => this.close());
+        }
+        
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this.save());
+        }
+        
+        const closeBtn = this.modal.querySelector('.close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.close());
+        }
     }
 
     open() {
@@ -33,24 +46,12 @@ export class PresetModal {
 
         if (presets.length === 3) {
             chrome.storage.local.set({ presets }, () => {
-                this.updatePresetButtons(presets);
+                // 저장 성공 후 이벤트 발생 - popup.js에서 처리하도록
+                window.dispatchEvent(new CustomEvent('presetsUpdated', { detail: presets }));
                 this.close();
             });
         } else {
             alert('Please enter valid preset values (greater than 0).');
         }
-    }
-
-    updatePresetButtons(presets = [30, 41, 60]) {
-        if (!Array.isArray(presets) || presets.length !== 3) {
-            presets = [30, 41, 60];
-        }
-        const buttons = document.querySelectorAll('.preset-btn');
-        buttons.forEach((button, index) => {
-            const minutes = presets[index] || 30;
-            const totalSeconds = minutes * 60;
-            button.textContent = formatTime(totalSeconds);
-            button.dataset.time = minutes;
-        });
     }
 }

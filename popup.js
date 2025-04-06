@@ -26,6 +26,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       throw new Error('Failed to initialize UI elements');
     }
 
+    // Initialize preset buttons from storage
+    chrome.storage.local.get(['presets'], (result) => {
+      if (result.presets) {
+        updatePresetButtons(result.presets);
+      }
+    });
+
     // Initialize event listeners after UI elements are ready
     await setupEventListeners(elements);
     await initializeTimerState();
@@ -43,6 +50,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 100); // Update after modal is displayed
       });
     }
+    
+    // 프리셋 업데이트 이벤트 리스너 추가
+    window.addEventListener('presetsUpdated', (event) => {
+      if (event.detail && Array.isArray(event.detail)) {
+        updatePresetButtons(event.detail);
+      }
+    });
+    
   } catch (err) {
     console.error('Error initializing popup:', err);
   }
@@ -506,10 +521,14 @@ function handleReset() {
 }
 
 function handlePresetClick(e) {
-    const time = parseInt(e.target.dataset.time, 10);
-    if (!isNaN(time) && time > 0) {
-        timerState.targetMinutes = time;
-        const totalSeconds = time * 60;
+    const timeValue = parseFloat(e.target.dataset.time || 30);
+    if (!isNaN(timeValue) && timeValue > 0) {
+        // 분 단위로 저장된 값에서 정확한 초 단위를 계산
+        const minutes = Math.floor(timeValue);
+        const seconds = Math.round((timeValue - minutes) * 60);
+        const totalSeconds = (minutes * 60) + seconds;
+        
+        timerState.targetMinutes = timeValue;
 
         const totalTimeInput = document.getElementById('total-time');
         const timeSlider = document.getElementById('time-slider');
@@ -526,7 +545,7 @@ function handlePresetClick(e) {
             timerDisplay.textContent = formatTime(totalSeconds);
         }
 
-        chrome.storage.local.set({ targetMinutes: time });
+        chrome.storage.local.set({ targetMinutes: timeValue });
 
         document.querySelectorAll('.preset-btn').forEach(btn => {
             btn.classList.remove('active');
@@ -640,7 +659,7 @@ function updateUIFromStatus(remaining, delay, totalSeconds) {
     if (elements.elapsed) {
       // 남은 시간이 0이고 지연이 발생했으면 지연 시간을 표시
       if (remaining === 0 && delay > 0) {
-        elements.elapsed.textContent = `+ ${formatTime(delay)}`;
+        elements.elapsed.textContent = `+${formatTime(delay)}`;
         elements.elapsed.style.color = 'var(--danger-color)'; // 지연 상태일 때는 분홍색으로 변경
       } else {
         elements.elapsed.textContent = formatTime(remaining);
@@ -649,7 +668,7 @@ function updateUIFromStatus(remaining, delay, totalSeconds) {
     }
     
     if (elements.delay) {
-      elements.delay.textContent = delay > 0 ? `+ ${formatTime(delay)}` : '';
+      elements.delay.textContent = delay > 0 ? `+${formatTime(delay)}` : '';
     }
     
     if (elements.totalElapsed) {
@@ -783,9 +802,9 @@ function updateMainInputFromTimeInputs(wrapper) {
   formatTimeInput(minuteInput);
   formatTimeInput(secondInput);
   
-  // Convert to total minutes, rounding up if there are seconds
-  const totalMinutes = h * 60 + m + (s > 0 ? 1 : 0);
-  mainInput.value = totalMinutes;
+  // 초 단위도 정확히 저장하기 위해 분 단위로 변환 (소수점 유지)
+  const totalSeconds = h * 3600 + m * 60 + s;
+  mainInput.value = totalSeconds / 60; // 분 단위로 저장 (소수점 유지)
 }
 
 function openPresetModal() {
@@ -794,9 +813,12 @@ function openPresetModal() {
     
     // Setup each preset
     document.querySelectorAll('.preset-edit').forEach((preset, index) => {
-      const minutes = presets[index] || 30;
-      const hours = Math.floor(minutes / 60);
-      const mins = minutes % 60;
+      const timeValue = presets[index] || 30;
+      
+      // 분 단위 값에서 시, 분, 초를 정확하게 계산
+      const hours = Math.floor(timeValue / 60);
+      const minutes = Math.floor(timeValue % 60);
+      const seconds = Math.round((timeValue - Math.floor(timeValue)) * 60);
       
       const hourInput = preset.querySelector('.hour-input');
       const minuteInput = preset.querySelector('.minute-input');
@@ -804,9 +826,9 @@ function openPresetModal() {
       const mainInput = preset.querySelector('.main-input');
       
       if (hourInput) hourInput.value = String(hours).padStart(2, '0');
-      if (minuteInput) minuteInput.value = String(mins).padStart(2, '0');
-      if (secondInput) secondInput.value = String(mins).padStart(2, '0');
-      if (mainInput) mainInput.value = minutes;
+      if (minuteInput) minuteInput.value = String(minutes).padStart(2, '0');
+      if (secondInput) secondInput.value = String(seconds).padStart(2, '0');
+      if (mainInput) mainInput.value = timeValue;
     });
     
     // Setup input handlers
@@ -843,9 +865,9 @@ function savePresetChanges() {
       const m = parseInt(minuteInput.value) || 0;
       const s = parseInt(secondInput.value) || 0;
       
-      // Convert to total minutes, rounding up if there are seconds
-      const totalMinutes = h * 60 + m + (s > 0 ? 1 : 0);
-      presets.push(totalMinutes);
+      // 기준은 초 단위로 통일 (시간->초, 분->초 변환)
+      const totalSeconds = h * 3600 + m * 60 + s;
+      presets.push(totalSeconds / 60); // 분 단위로 저장 (소수점 유지)
     }
   });
   
@@ -871,10 +893,14 @@ function updatePresetButtons(presets = [30, 41, 60]) {
     }
     const buttons = document.querySelectorAll('.preset-btn');
     buttons.forEach((button, index) => {
-        const minutes = presets[index] || 30;
-        const totalSeconds = minutes * 60;
+        const timeValue = presets[index] || 30;
+        // 분 단위 값에서 분과 초를 계산 (예: 30.5는 30분 30초)
+        const minutes = Math.floor(timeValue);
+        const seconds = Math.round((timeValue - minutes) * 60);
+        const totalSeconds = (minutes * 60) + seconds;
+        
         button.textContent = formatTime(totalSeconds);
-        button.dataset.time = minutes;
+        button.dataset.time = timeValue; // 원래 값 그대로 저장 (소수점 포함)
     });
 }
 

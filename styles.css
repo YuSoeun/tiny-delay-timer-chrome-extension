@@ -145,7 +145,7 @@ body::after {
 }
 
 #elapsed {
-  color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 #total-time {
@@ -746,5 +746,5 @@ input[type="number"]:focus {
   font-weight: 700; /* 더 두꺼운 글꼴 */
   padding: 12px 0 20px; /* 아래쪽 여백 증가 */
   letter-spacing: -0.8px; /* 글자 간격 조정 */
-  color: var(--primary-color); /* 원하는 색상으로 변경 */
+  color: var(--text-primary); /* 원하는 색상으로 변경 */
 }

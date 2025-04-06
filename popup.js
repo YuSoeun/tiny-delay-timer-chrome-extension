@@ -456,19 +456,33 @@ function handlePresetClick(e) {
     if (!isNaN(time) && time > 0) {
         timerState.targetMinutes = time;
         const totalSeconds = time * 60;
-        
+
         const totalTimeInput = document.getElementById('total-time');
         const timeSlider = document.getElementById('time-slider');
-        
-        if (totalTimeInput) totalTimeInput.value = formatTime(totalSeconds);
-        if (timeSlider) timeSlider.value = totalSeconds;
-        
+        const timerDisplay = document.getElementById('timerDisplay');
+
+        if (totalTimeInput) {
+            totalTimeInput.value = formatTime(totalSeconds);
+        }
+        if (timeSlider) {
+            timeSlider.value = totalSeconds;
+        }
+        // IDLE 상태에서 타이머 디스플레이도 업데이트
+        if (timerDisplay) {
+            timerDisplay.textContent = formatTime(totalSeconds);
+        }
+
         chrome.storage.local.set({ targetMinutes: time });
-        
+
         document.querySelectorAll('.preset-btn').forEach(btn => {
             btn.classList.remove('active');
         });
         e.target.classList.add('active');
+
+        // Ensure the timer state is updated even in IDLE state
+        if (currentState === TimerState.IDLE) {
+            updateUIFromStatus(totalSeconds, 0, totalSeconds);
+        }
     }
 }
 

@@ -12,37 +12,60 @@ export class TimePickerModal {
         throw new Error('Required modal elements not found');
       }
 
-      this.setupTimeInputs();
-      this.setupEvents();
+      // Check DOM readiness before proceeding
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          this.setupTimeInputs();
+          this.setupEvents();
+        });
+      } else {
+        this.setupTimeInputs();
+        this.setupEvents();
+      }
     } catch (err) {
       console.error('Error initializing TimePickerModal:', err);
     }
   }
 
   setupTimeInputs() {
-    // Use only necessary buffer items to stay within bounds
-    this.hours = Array(2).fill('').concat(
-      Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0'))
-    ).concat(Array(2).fill(''));
-    
-    this.minutes = Array(2).fill('').concat(
-      Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'))
-    ).concat(Array(2).fill(''));
-    
-    this.seconds = Array(2).fill('').concat(
-      Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'))
-    ).concat(Array(2).fill(''));
-    
-    const hourContainer = document.getElementById('hourContainer');
-    const minuteContainer = document.getElementById('minuteContainer');
-    const secondContainer = document.getElementById('secondContainer');
-    
-    this.populateTimeItems(hourContainer, this.hours);
-    this.populateTimeItems(minuteContainer, this.minutes);
-    
-    // Only populate seconds if the container exists
-    if (secondContainer) {
-      this.populateTimeItems(secondContainer, this.seconds);
+    try {
+      // Use only necessary buffer items to stay within bounds
+      this.hours = Array(2).fill('').concat(
+        Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0'))
+      ).concat(Array(2).fill(''));
+      
+      this.minutes = Array(2).fill('').concat(
+        Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'))
+      ).concat(Array(2).fill(''));
+      
+      this.seconds = Array(2).fill('').concat(
+        Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'))
+      ).concat(Array(2).fill(''));
+      
+      const hourContainer = document.getElementById('hourContainer');
+      const minuteContainer = document.getElementById('minuteContainer');
+      const secondContainer = document.getElementById('secondContainer');
+      
+      // Add error handling for missing containers
+      if (!hourContainer || !minuteContainer) {
+        console.warn('Time picker containers missing. UI may not function correctly.');
+      }
+      
+      // Only populate containers that exist
+      if (hourContainer) {
+        this.populateTimeItems(hourContainer, this.hours);
+      }
+      
+      if (minuteContainer) {
+        this.populateTimeItems(minuteContainer, this.minutes);
+      }
+      
+      // Only populate seconds if the container exists
+      if (secondContainer) {
+        this.populateTimeItems(secondContainer, this.seconds);
+      }
+    } catch (err) {
+      console.error('Error setting up time inputs:', err);
     }
   }
 

@@ -150,10 +150,48 @@
     max-height: 110px;
     height: 110px;
     overscroll-behavior: contain;
+    cursor: pointer; /* Indicate clickable */
+    user-select: none; /* Prevent text selection during drag */
+}
+
+/* Add hover styles to indicate clickable areas */
+.scroll-container:before,
+.scroll-container:after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 33.33%;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 6;
+}
+
+/* Top clickable area */
+.scroll-container:before {
+    top: 0;
+    background: linear-gradient(to bottom, rgba(138, 123, 255, 0.1), transparent);
+}
+
+/* Bottom clickable area */
+.scroll-container:after {
+    bottom: 0;
+    background: linear-gradient(to top, rgba(138, 123, 255, 0.1), transparent);
+}
+
+/* Show gradients on hover */
+.scroll-container:hover:before,
+.scroll-container:hover:after {
+    opacity: 1;
 }
 
 .scroll-container::-webkit-scrollbar {
     display: none;
+}
+
+.scroll-container:active {
+    cursor: grabbing;
 }
 
 .time-item {

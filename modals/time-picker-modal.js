@@ -751,7 +751,31 @@ export class TimePickerModal {
   setupClickableScrollAreas(container, callback) {
     if (!container) return;
     
-    container.addEventListener('click', (e) => {
+    let pressTimer = null;
+    let isPressing = false;
+    let repeatInterval = null;
+    
+    // Function to handle repeated action while pressing
+    const startRepeating = (direction) => {
+      // Execute the action immediately once
+      callback(direction);
+      
+      // Then set up an interval to repeat the action
+      repeatInterval = setInterval(() => {
+        callback(direction);
+      }, 150); // Repeat every 150ms
+    };
+    
+    // Function to stop repeating action
+    const stopRepeating = () => {
+      if (repeatInterval) {
+        clearInterval(repeatInterval);
+        repeatInterval = null;
+      }
+      isPressing = false;
+    };
+    
+    container.addEventListener('mousedown', (e) => {
       // Determine which part of the container was clicked
       const containerRect = container.getBoundingClientRect();
       const clickY = e.clientY;
@@ -760,14 +784,56 @@ export class TimePickerModal {
       const topSection = containerRect.top + containerRect.height * 0.33;
       const bottomSection = containerRect.top + containerRect.height * 0.66;
       
+      let direction = null;
+      
       if (clickY < topSection) {
-        // Clicked in the top third - scroll up
-        callback('up');
+        // Clicked in the top third
+        direction = 'up';
       } else if (clickY > bottomSection) {
-        // Clicked in the bottom third - scroll down
-        callback('down');
+        // Clicked in the bottom third
+        direction = 'down';
       }
-      // Clicked in the middle - do nothing
+      
+      // If clicked in top or bottom section, start press-and-hold action
+      if (direction) {
+        isPressing = true;
+        
+        // Small initial delay before repeating starts
+        pressTimer = setTimeout(() => {
+          if (isPressing) {
+            startRepeating(direction);
+          }
+        }, 300); // Wait 300ms before starting to repeat
+        
+        // Execute action once immediately
+        callback(direction);
+        
+        e.preventDefault(); // Prevent text selection
+      }
+    });
+    
+    // Stop repeating on mouse up anywhere in the document
+    document.addEventListener('mouseup', () => {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+      stopRepeating();
+    });
+    
+    // Also stop if mouse leaves the container
+    container.addEventListener('mouseleave', () => {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+      stopRepeating();
+    });
+    
+    // Handle single click without using press-and-hold
+    container.addEventListener('click', (e) => {
+      // We already handled this in mousedown for press-and-hold
+      // No need to do anything here as the action is already triggered
     });
   }
 }

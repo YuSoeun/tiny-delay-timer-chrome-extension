@@ -1,4 +1,6 @@
 export class PresetModal {
+    static NUM_PRESETS = 3; // Configurable number of presets
+
     constructor() {
         this.modal = document.getElementById('presetModal');
         this.boundKeydownHandler = this.handleKeydown.bind(this);
@@ -94,10 +96,10 @@ export class PresetModal {
         
         // 프리셋 값 불러오기 및 표시
         chrome.storage.local.get(['presets'], (result) => {
-            const presets = result.presets || [30, 41, 60];
+            const presets = result.presets || Array(PresetModal.NUM_PRESETS).fill(30);
             
             // 각 프리셋 별로 값 설정
-            for (let i = 1; i <= 3; i++) {
+            for (let i = 1; i <= PresetModal.NUM_PRESETS; i++) {
                 const presetValue = presets[i-1];
                 const mainInput = document.getElementById(`preset${i}`);
                 if (!mainInput) continue;
@@ -140,11 +142,10 @@ export class PresetModal {
     }
 
     save() {
-        const presets = [
-            parseFloat(document.getElementById('preset1').value) || 30,
-            parseFloat(document.getElementById('preset2').value) || 41,
-            parseFloat(document.getElementById('preset3').value) || 60
-        ];
+        const presets = [];
+        for (let i = 1; i <= PresetModal.NUM_PRESETS; i++) {
+            presets.push(parseFloat(document.getElementById(`preset${i}`).value) || 30);
+        }
 
         if (presets.every(val => !isNaN(val) && val > 0)) {
             chrome.storage.local.set({ presets }, () => {

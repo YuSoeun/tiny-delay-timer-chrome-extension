@@ -7,14 +7,18 @@ self.addEventListener('activate', (event) => {
 let primaryColor = '#8a7bff'; // 기본값
 let dangerColor = '#ff7eb5'; // 기본값
 
-// CSS 변수를 가져오는 함수
+// CSS 변수 값을 가져오는 함수
 function getCssVariables() {
     try {
         // chrome.tabs API를 사용하지 않고 직접 메시지 전송
         chrome.runtime.sendMessage({action: 'getCssVariables'}, function(response) {
             if (chrome.runtime.lastError) {
-                // 런타임 에러가 발생하면 무시하고 기본값 사용
-                console.log('Could not get CSS variables, using defaults:', chrome.runtime.lastError.message);
+                const errorMessage = chrome.runtime.lastError.message;
+                console.warn(
+                    '[CSS Variables] Communication error with content script: ' + errorMessage + '\n' +
+                    'Using default values - primary: ' + primaryColor + ', danger: ' + dangerColor + '\n' +
+                    'This is expected on extension startup or if no active tabs are available.'
+                );
                 return;
             }
             
@@ -25,7 +29,7 @@ function getCssVariables() {
             }
         });
     } catch (error) {
-        console.log('Error while getting CSS variables:', error);
+        console.error('Error while getting CSS variables:', error);
     }
 }
 

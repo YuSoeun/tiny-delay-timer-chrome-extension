@@ -1,5 +1,6 @@
 export class TimePickerModal {
   constructor() {
+    this.MIN_MODAL_HEIGHT = 260; // Configurable minimum modal height
     this.initialize();
   }
 
@@ -446,7 +447,7 @@ export class TimePickerModal {
     // If the time picker would be cut off, adjust positioning and size
     if (modalHeight > viewportHeight * 0.85) {
       // More aggressive resizing for very small viewports
-      const newHeight = Math.min(viewportHeight * 0.85, 260); // Minimum usable height
+      const newHeight = Math.min(viewportHeight * 0.85, this.MIN_MODAL_HEIGHT);
       this.modal.style.maxHeight = `${newHeight}px`;
       
       // Adjust vertical position if needed

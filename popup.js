@@ -1,6 +1,15 @@
 import { PresetModal } from './modals/preset-modal.js';
 import { TimePickerModal } from './modals/time-picker-modal.js';
 
+// Helper function to format time inputs with leading zeros
+export function formatTimeInput(input) {
+  const maxVal = input.classList.contains('hour-input') ? 23 : 59;
+  let val = parseInt(input.value) || 0;
+  if (val < 0) val = 0;
+  if (val > maxVal) val = maxVal;
+  input.value = String(val).padStart(2, '0');
+}
+
 // Define the timer state constants at the top level so they're accessible everywhere
 const TimerState = {
   IDLE: 'idle',
@@ -867,15 +876,6 @@ function setupPresetInputs() {
       });
     });
   });
-}
-
-// Helper function to format time inputs with leading zeros
-function formatTimeInput(input) {
-  const maxVal = input.classList.contains('hour-input') ? 23 : 59;
-  let val = parseInt(input.value) || 0;
-  if (val < 0) val = 0;
-  if (val > maxVal) val = maxVal;
-  input.value = String(val).padStart(2, '0');
 }
 
 function updateMainInputFromTimeInputs(wrapper) {

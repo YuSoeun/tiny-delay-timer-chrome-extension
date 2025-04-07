@@ -68,9 +68,9 @@ boj-delay-timer-chrome-extension/
 
 ## 📌 Roadmap / To-do
 
-- [ ] Add popup interface for target time input
-- [ ] Customizable timer formats (e.g., mm:ss)
-- [ ] Option to disable badge display
+- [x] Add popup interface for target time input
+- [x] Customizable timer formats (e.g., mm:ss)
+- [x] Option to disable badge display
 - [ ] In-page overlay mode (optional)
 
 ---

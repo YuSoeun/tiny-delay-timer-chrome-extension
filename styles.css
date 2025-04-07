@@ -24,7 +24,7 @@ body {
   overflow: hidden;
 }
 
-/* 배경 효과 */
+/* Background effects */
 body::before {
   content: '';
   position: absolute;
@@ -67,6 +67,7 @@ body::after {
   display: none;
 }
 
+/* Main card styles */
 .status-card {
   width: 100%;
   box-sizing: border-box;
@@ -79,17 +80,16 @@ body::after {
   border: 1px solid var(--border-color);
 }
 
-/* 메인 카드 스타일 */
 .main-card {
   text-align: center;
-  padding: 14px;  /* 16px에서 감소 */
+  padding: 14px;
 }
 
 .timer-display {
   margin-bottom: 20px;
 }
 
-/* 메인 타이머 디스플레이 스타일 통일 */
+/* Timer display styles */
 .time-display {
   display: flex;
   align-items: center;
@@ -176,7 +176,6 @@ body::after {
   color: var(--primary-color);
 }
 
-/* Make timerDisplay match the elapsed timer style */
 #timerDisplay {
   width: 160px;
   font-size: 32px;
@@ -189,10 +188,10 @@ body::after {
   margin: 0 auto;
 }
 
-/* 하단 정보 디스플레이 통일 */
+/* Timer interface components */
 .info-row {
   display: flex;
-  justify-content: space-around; /* 각 항목을 균등하게 배치 */
+  justify-content: space-around;
   align-items: center;
   padding: 0 4px;
   font-size: 12px;
@@ -214,7 +213,7 @@ body::after {
 }
 
 .delay-indicator {
-  display: none; /* Changed from flex to none to hide the delay indicator */
+  display: none;
 }
 
 .delay-indicator i {
@@ -222,7 +221,7 @@ body::after {
 }
 
 .delay-time {
-  display: none; /* Hide delay time */
+  display: none;
 }
 
 .progress-bar {
@@ -232,7 +231,7 @@ body::after {
   background-color: rgba(138, 123, 255, 0.1);
   border-radius: 6px;
   overflow: hidden;
-  margin-bottom: 12px;  /* 16px에서 감소 */
+  margin-bottom: 12px;
 }
 
 .progress {
@@ -263,24 +262,13 @@ body::after {
   transition: width 0.3s ease;
 }
 
-/* Info row */
-.info-row {
-  display: flex;
-  justify-content: space-around; /* 각 항목을 균등하게 배치 */
-  align-items: center;
-  padding: 0 4px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1;
-}
-
 .total-time-info,
 .target-time-info {
   display: flex;
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  min-width: auto; /* 최소 너비 제거하여 자연스럽게 배치 */
+  min-width: auto;
   height: 16px;
 }
 
@@ -306,10 +294,9 @@ body::after {
 }
 
 #delay {
-  display: none; /* Hide delay element */
+  display: none;
 }
 
-/* 타이머 정보 컨테이너 */
 .timer-info-container {
   display: flex;
   flex-direction: column;
@@ -317,12 +304,11 @@ body::after {
   margin-bottom: 8px;
 }
 
-/* 메인 컨트롤 버튼 */
 .main-controls {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin-top: 8px;  /* 12px에서 감소 */
+  margin-top: 8px;
 }
 
 .btn-main {
@@ -363,24 +349,22 @@ body::after {
   border-color: var(--danger-color);
 }
 
-/* 세팅 카드 스타일 */
 .settings-card {
   display: none;
 }
 
-/* total-time 입력 스타일 */
 #total-time {
-  width: 160px;  /* 너비 증가 */
+  width: 160px;
   height: 28px;
   padding: 0 4px;
-  font-size: 36px;  /* 크기 증가 */
+  font-size: 36px;
   font-family: 'SF Mono', 'Consolas', monospace;
   font-weight: 600;
   color: var(--text-primary);
   background: transparent;
   border: none;
   text-align: center;
-  letter-spacing: -0.5px;  /* 자간 조정 */
+  letter-spacing: -0.5px;
   caret-color: var(--primary-color);
   cursor: default;
 }
@@ -394,21 +378,18 @@ body::after {
 #total-time:focus {
   outline: none;
   color: var(--primary-color);
-  animation: blink 1s step-end infinite; /* 커서 깜박임 효과 */
+  animation: blink 1s step-end infinite;
 }
 
-/* 커서 깜박임 애니메이션 */
 @keyframes blink {
   50% { caret-color: transparent; }
 }
 
-/* 불필요한 스타일 제거 */
 .total-time-input,
 .unit {
   display: none;
 }
 
-/* custom-time 관련 스타일 제거 */
 .custom-time,
 .input-with-label,
 .input-wrapper,
@@ -488,7 +469,6 @@ input[type="number"]:focus {
   box-shadow: 0 6px 12px rgba(109, 213, 181, 0.25);
 }
 
-/* 통계 카드 스타일 */
 .stats-card {
   padding: 16px;
 }
@@ -539,17 +519,14 @@ input[type="number"]:focus {
   font-feature-settings: "tnum";
 }
 
-/* 앱 정보 바 */
 .app-info {
   display: none;
 }
 
-/* 앱 하단 컨트롤 */
 .bottom-controls {
   display: none;
 }
 
-/* 타이머 상태에 따른 표시/숨김 처리 수정 */
 .setup-controls {
   margin: 16px 0;
 }
@@ -566,7 +543,6 @@ input[type="number"]:focus {
   display: block;
 }
 
-/* 프리셋 버튼과 액션 버튼 레이아웃 */
 .setup-controls {
   display: flex;
   flex-direction: column;
@@ -579,7 +555,6 @@ input[type="number"]:focus {
   gap: 8px;
 }
 
-/* 프리셋 및 설정 버튼 레이아웃 */
 .controls-row {
   display: flex;
   align-items: center;
@@ -601,7 +576,6 @@ input[type="number"]:focus {
   box-shadow: var(--card-shadow);
 }
 
-/* 앱 하단 정보 */
 .app-footer {
   display: flex;
   justify-content: flex-end;
@@ -612,7 +586,6 @@ input[type="number"]:focus {
   visibility: hidden;
 }
 
-/* running 상태일 때 위치 조정 */
 .container.running .github-link {
   visibility: visible;
   position: absolute;
@@ -638,7 +611,6 @@ input[type="number"]:focus {
   text-decoration: none;
 }
 
-/* 깃허브 정보 스타일 제거 */
 .github-info {
   display: none;
 }
@@ -649,7 +621,6 @@ input[type="number"]:focus {
   box-shadow: 0 4px 8px rgba(122, 105, 230, 0.15);
 }
 
-/* 타이머 상태에 따른 표시/숨김 처리 */
 .timer-setup {
   width: 100%;
   text-align: center;
@@ -673,7 +644,6 @@ input[type="number"]:focus {
   display: none;
 }
 
-/* 클릭 가능한 요소 스타일 */
 .clickable {
   cursor: pointer;
 }
@@ -691,7 +661,6 @@ input[type="number"]:focus {
   opacity: 0.8;
 }
 
-/* 숨겨진 입력 필드를 위한 스타일 */
 .hidden-input {
   position: absolute;
   opacity: 0;
@@ -702,7 +671,6 @@ input[type="number"]:focus {
   pointer-events: none;
 }
 
-/* 모달 스타일 */
 .modal {
   display: none;
   position: fixed;
@@ -748,11 +716,10 @@ input[type="number"]:focus {
   background-color: var(--card-bg);
 }
 
-/* 큰 타이머 디스플레이 스타일 */
 .large-timer {
-  font-size: 50px; /* 더 큰 폰트 사이즈로 조정 */
-  font-weight: 700; /* 더 두꺼운 글꼴 */
-  padding: 12px 0 20px; /* 아래쪽 여백 증가 */
-  letter-spacing: -0.8px; /* 글자 간격 조정 */
-  color: var(--text-primary); /* 원하는 색상으로 변경 */
+  font-size: 50px;
+  font-weight: 700;
+  padding: 12px 0 20px;
+  letter-spacing: -0.8px;
+  color: var(--text-primary);
 }

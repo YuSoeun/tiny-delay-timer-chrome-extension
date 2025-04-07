@@ -12,10 +12,10 @@
 </head>
 <body>
   <div class="container">
-    <!-- Time Picker 배경 -->
+    <!-- Time Picker Background -->
     <div id="timePickerBackground" class="modal-background"></div>
     
-    <!-- Time Picker 모달 -->
+    <!-- Time Picker Modal -->
     <div id="timePickerModal" class="time-picker-modal">
       <div class="modal-header">
         <div class="input-group">
@@ -39,22 +39,22 @@
       </div>
     </div>
 
-    <!-- 메인 카드: 타이머 정보 및 컨트롤 -->
+    <!-- Main Card: Timer Information and Controls -->
     <div class="status-card main-card">
       <input type="text" id="total-time" value="00:30:00" class="hidden-input">
       
-      <!-- 타이머 표시 - IDLE 상태에서만 보임 -->
+      <!-- Timer Display - Only visible in IDLE state -->
       <div id="idle-state" class="timer-state active">
         <div class="timer-display clickable large-timer" id="timerDisplay">00:30:00</div>
       </div>
       
-      <!-- 타이머 실행 중이나 일시정지 상태에서만 표시할 정보 -->
+      <!-- Information displayed only during running or paused states -->
       <div id="running-state" class="timer-state">
         <div id="elapsed">00:00:00</div>
         <div class="timer-info">
-          <!-- 정보 요약 두 줄로 구성 -->
+          <!-- Information summary in two rows -->
           <div class="timer-info-container">
-            <!-- 첫 번째 행: Total과 Target 정보 -->
+            <!-- First row: Total and Target information -->
             <div class="info-row">
               <div class="time-info-item">
                 <i class="bi bi-clock-history"></i>
@@ -66,7 +66,7 @@
               </div>
             </div>
             
-            <!-- 두 번째 행: Delay 정보 -->
+            <!-- Second row: Delay information -->
             <div class="info-row">
               <div class="delay-indicator">
                 <i class="bi bi-exclamation-circle"></i>
@@ -75,7 +75,7 @@
             </div>
           </div>
           
-          <!-- 진행 바 -->
+          <!-- Progress bar -->
           <div class="progress-bar">
             <div class="progress" id="elapsed-progress"></div>
             <div class="progress delay-progress" id="delay-progress"></div>
@@ -83,7 +83,7 @@
         </div>
       </div>
       
-      <!-- 컨트롤 버튼 -->
+      <!-- Control buttons -->
       <div class="timer-controls">
         <button id="playBtn" class="enabled"><i class="bi bi-play-fill"></i></button>
         <button id="pauseBtn"><i class="bi bi-pause-fill"></i></button>
@@ -91,7 +91,7 @@
       </div>
     </div>
 
-    <!-- 타이머 실행 전/후 상태에 따라 다른 UI 표시 -->
+    <!-- Different UI based on timer state (before/after execution) -->
     <div class="setup-controls">
       <div class="controls-row">
         <div class="preset-buttons">
@@ -105,7 +105,7 @@
       </div>
     </div>
     
-    <!-- 프리셋 설정 모달 추가 -->
+    <!-- Preset settings modal -->
     <div id="presetModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
@@ -161,7 +161,7 @@
       </div>
     </div>
     
-    <!-- 깃허브 링크 -->
+    <!-- GitHub link -->
     <div class="github-link">
       <i class="bi bi-github"></i>
       <a href="https://github.com/YuSoeun/tiny-delay-timer-chrome-extension" target="_blank">doplinblue</a>

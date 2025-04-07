@@ -17,7 +17,6 @@ const TimerState = {
   PAUSED: 'paused'
 };
 
-// Keep track of current state
 let currentState = TimerState.IDLE;
 
 let timerState = {
@@ -30,7 +29,6 @@ let timerState = {
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    // CSS 변수 값을 가져와서 background.js로 전송
     sendCssVariablesToBackground();
     
     const elements = await initializeUI();
@@ -38,26 +36,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       throw new Error('Failed to initialize UI elements');
     }
 
-    // 저장된 targetMinutes 값을 불러와서 타이머에 설정
     chrome.storage.local.get(['targetMinutes', 'presets'], (result) => {
       if (result.presets) {
         updatePresetButtons(result.presets);
       }
       
-      // 저장된 타겟 시간 불러오기
       if (result.targetMinutes) {
-        // 소수점을 포함한 분 단위에서 시, 분, 초로 변환
         const targetMinutes = result.targetMinutes;
         const hours = Math.floor(targetMinutes / 60);
         const minutes = Math.floor(targetMinutes % 60);
         const seconds = Math.round((targetMinutes - Math.floor(targetMinutes)) * 60);
         const totalSeconds = hours * 3600 + minutes * 60 + seconds;
         
-        // 타이머 상태 업데이트
         timerState.targetMinutes = targetMinutes;
         timerState.activeTargetMinutes = targetMinutes;
         
-        // UI 업데이트
         const totalTimeInput = document.getElementById('total-time');
         const timerDisplay = document.getElementById('timerDisplay');
         
@@ -71,25 +64,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
 
-    // Initialize event listeners after UI elements are ready
     await setupEventListeners(elements);
     await initializeTimerState();
 
-    // Set initial state
     document.body.classList.add('state-idle');
 
-    // Initialize time previews when the preset modal is opened
     const settingsBtn = document.querySelector('.settings-btn');
     if (settingsBtn) {
       settingsBtn.addEventListener('click', function() {
         setTimeout(() => {
           updateTimePreview();
           setupPresetInputs();
-        }, 100); // Update after modal is displayed
+        }, 100);
       });
     }
     
-    // 프리셋 업데이트 이벤트 리스너 추가
     window.addEventListener('presetsUpdated', (event) => {
       if (event.detail && Array.isArray(event.detail)) {
         updatePresetButtons(event.detail);
@@ -101,22 +90,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// CSS 변수 값을 가져와서 background.js로 전송하는 함수
 function sendCssVariablesToBackground() {
   try {
     const computedStyle = getComputedStyle(document.documentElement);
     const primaryColor = computedStyle.getPropertyValue('--primary-color').trim();
     const dangerColor = computedStyle.getPropertyValue('--danger-color').trim();
     
-    // background.js로 CSS 변수 값 전송
     chrome.runtime.sendMessage({
       action: 'updateCssVariables',
       primaryColor: primaryColor,
       dangerColor: dangerColor
     }, function(response) {
-      // lastError 체크로 오류 핸들링 추가
       if (chrome.runtime.lastError) {
-        // 오류가 있지만 무시해도 괜찮음 - 백그라운드 스크립트가 아직 로드되지 않았거나 이용할 수 없을 수 있음
         console.log('Could not update CSS variables in background script, might not be ready yet');
         return;
       }
@@ -133,7 +118,6 @@ async function initializeUI() {
     const timePickerModal = new TimePickerModal();
     window.timePickerModal = timePickerModal;
 
-    // Define all potential elements we might use
     const elements = {
       timerDisplay: document.getElementById('timerDisplay'),
       elapsed: document.getElementById('elapsed'),
@@ -150,7 +134,6 @@ async function initializeUI() {
       settingsBtn: document.querySelector('.settings-btn')
     };
 
-    // Only verify critical elements and log warnings for missing non-critical ones
     const criticalElements = ['elapsed', 'delay', 'totalElapsed', 'elapsedProgress', 'delayProgress', 'totalTimeInput'];
     let hasAllCriticalElements = true;
     
@@ -165,7 +148,6 @@ async function initializeUI() {
       throw new Error('One or more critical elements are missing');
     }
 
-    // Initialize click handlers for elements that exist
     if (elements.timerDisplay) {
       elements.timerDisplay.addEventListener('click', () => {
         try {
@@ -175,9 +157,6 @@ async function initializeUI() {
         }
       });
     }
-
-    // 버튼 이벤트 리스너는 setupEventListeners에서만 설정하도록 수정
-    // 여기서는 요소만 확인하고 반환
 
     return elements;
   } catch (err) {
@@ -192,18 +171,15 @@ function setupEventListeners(elements) {
         return;
     }
 
-    // Check if critical totalTimeInput element exists
     if (!elements.totalTimeInput) {
         console.error('Critical element #total-time not found');
         return;
     }
 
-    // Setup event listeners for elements that exist
     if (elements.targetTime) {
         elements.targetTime.addEventListener('input', handleTargetTimeChange);
     }
     
-    // playBtn, pauseBtn, resetBtn 이벤트 리스너 설정
     if (elements.playBtn) {
         elements.playBtn.addEventListener('click', handleStart);
     }
@@ -216,7 +192,6 @@ function setupEventListeners(elements) {
         elements.resetBtn.addEventListener('click', handleReset);
     }
 
-    // 프리셋 버튼 클릭 이벤트 추가
     const presetButtons = document.querySelectorAll('.preset-btn');
     if (presetButtons.length > 0) {
         presetButtons.forEach(button => {
@@ -224,13 +199,11 @@ function setupEventListeners(elements) {
         });
     }
 
-    // 설정 버튼 클릭 이벤트 추가
     const settingsBtn = document.querySelector('.settings-btn');
     if (settingsBtn) {
         settingsBtn.addEventListener('click', openPresetModal);
     }
 
-    // 모달 닫기 및 저장 버튼 이벤트 추가
     const cancelPresetsBtn = document.getElementById('cancelPresets');
     if (cancelPresetsBtn) {
         cancelPresetsBtn.addEventListener('click', closePresetModal);
@@ -395,85 +368,53 @@ function setupEventListeners(elements) {
                 sendResponse({ primaryColor, dangerColor });
             } catch (error) {
                 console.error('Error getting CSS variables:', error);
-                sendResponse({}); // 오류 발생 시 빈 객체 반환
+                sendResponse({});
             }
-            return true; // 비동기 응답을 위해 true 반환
+            return true;
         }
     });
 }
 
-function isValidTime(timeStr) {
-    const parts = timeStr.split(':').map(Number);
-    if (parts.length !== 3) return false;
-    
-    const [hours, minutes, seconds] = parts;
-    if (isNaN(hours) || isNaN(minutes) || isNaN(seconds)) return false;
-    if (hours < 0 || hours > 23) return false;
-    if (minutes < 0 || minutes >= 60) return false;
-    if (seconds < 0 || seconds >= 60) return false;
-    
-    return true;
-}
-
-function handleTargetTimeChange(e) {
-    const value = parseInt(e.target.value, 10);
-    if (!isNaN(value) && value > 0) {
-        timerState.targetMinutes = value;
-        chrome.storage.local.set({ targetMinutes: value });
-    }
-}
-
-// 타이머 상태 업데이트 함수
 function updateTimerState(newState) {
-  // Remove all state classes
   document.body.classList.remove('state-idle', 'state-running', 'state-paused');
   
-  // Add the new state class
   document.body.classList.add(`state-${newState}`);
   
-  // DOM 요소 참조
   const idleState = document.getElementById('idle-state');
   const runningState = document.getElementById('running-state');
   const playBtn = document.getElementById('playBtn');
   const pauseBtn = document.getElementById('pauseBtn');
   const resetBtn = document.getElementById('resetBtn');
   
-  // 버튼 상태 초기화
   [playBtn, pauseBtn, resetBtn].forEach(btn => btn.classList.remove('enabled'));
   
-  // 새 상태에 따른 UI 업데이트
   switch(newState) {
     case TimerState.IDLE:
-      // IDLE 상태에서는 타이머 표시(idle-state)를 보여주고 running-state는 숨김
       idleState.classList.add('active');
       runningState.classList.remove('active');
       
-      // 재생 버튼만 활성화
       playBtn.classList.add('enabled');
       break;
       
     case TimerState.RUNNING:
-      // RUNNING 상태에서는 타이머 표시(idle-state)를 숨기고 running-state만 보여줌
+      // In RUNNING state, hide timer display and show running state
       idleState.classList.remove('active');
       runningState.classList.add('active');
       
-      // 일시정지 및 리셋 버튼 활성화
       pauseBtn.classList.add('enabled');
       resetBtn.classList.add('enabled');
       break;
       
     case TimerState.PAUSED:
-      // PAUSED 상태에서도 타이머 표시(idle-state)를 숨기고 running-state만 보여줌
+      // In PAUSED state, hide timer display and show running state
       idleState.classList.remove('active');
       runningState.classList.add('active');
       
-      // 재생 및 리셋 버튼 활성화
       playBtn.classList.add('enabled');
       resetBtn.classList.add('enabled');
       break;
   }
   
-  // 현재 상태 업데이트
   currentState = newState;
 }
 
@@ -485,20 +426,16 @@ function handleStart() {
         return;
     }
 
-    // 일시정지 상태에서 다시 시작하는 경우
     if (timerState.pausedTime !== null) {
         console.log('Resuming from paused state');
         
-        // 일시정지 상태에서 경과한 시간만큼 startTime을 조정
         const pausedDuration = Date.now() - timerState.pausedTime;
         timerState.startTime += pausedDuration;
         timerState.pausedTime = null;
         timerState.isRunning = true;
 
-        // UI 상태 업데이트
         updateTimerState(TimerState.RUNNING);
         
-        // background 서비스에 타이머 재시작 메시지 전송
         chrome.runtime.sendMessage({
             action: 'resumeTimer',
             pausedDuration: pausedDuration
@@ -508,20 +445,17 @@ function handleStart() {
         return;
     }
 
-    // 새 타이머 시작
     const [hours, minutes, seconds] = timeValue.split(':').map(Number);
     const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
     
-    // 초 단위 정보를 보존하기 위해 소수점 사용 (초÷60 = 분의 소수점 부분)
     const targetMinutesExact = totalSeconds / 60;
     
-    timerState.targetMinutes = targetMinutesExact; // 타겟 시간 정확히 저장
-    timerState.activeTargetMinutes = targetMinutesExact; // 활성 타겟에도 정확히 저장
+    timerState.targetMinutes = targetMinutesExact;
+    timerState.activeTargetMinutes = targetMinutesExact;
     timerState.isRunning = true;
     timerState.startTime = Date.now();
     timerState.pausedTime = null;
 
-    // 설정된 시간을 스토리지에 저장 (창을 닫았다 열어도 유지되도록)
     chrome.storage.local.set({ targetMinutes: targetMinutesExact });
 
     const container = document.querySelector('.container');
@@ -530,7 +464,6 @@ function handleStart() {
     const elapsedElement = document.getElementById('elapsed');
     if (elapsedElement) elapsedElement.textContent = formatTime(totalSeconds);
 
-    // 목표 시간 업데이트
     const targetTimeElement = document.getElementById('target-time');
     if (targetTimeElement) targetTimeElement.textContent = formatTime(totalSeconds);
 
@@ -545,30 +478,23 @@ function handleStart() {
 }
 
 function handlePause() {
-    // 유효한 시간 형식인지 확인
     const timeValue = document.getElementById('total-time').value;
     if (!isValidTime(timeValue)) {
         alert('Invalid time format. Please use HH:MM:SS format.');
         return;
     }
 
-    // 타이머가 실행 중이 아니면 일시정지할 수 없음
     if (!timerState.isRunning) {
         console.log('Timer is not running, cannot pause');
         return;
     }
     
-    // 로컬 타이머 상태 업데이트
     timerState.isRunning = false;
     timerState.pausedTime = Date.now();
     
-    // background 서비스에 일시정지 메시지 전송
     chrome.runtime.sendMessage({ action: 'pauseTimer' });
     
-    // UI 상태 업데이트
     updateTimerState(TimerState.PAUSED);
-    
-    // 진행 중이던 interval 정리
     clearInterval(timerState.elapsedInterval);
     
     console.log('Timer paused successfully');
@@ -581,33 +507,27 @@ function handleReset() {
         return;
     }
 
-    // 현재 표시된 시간을 사용하여 목표 시간 설정
     const [hours, minutes, seconds] = timeValue.split(':').map(Number);
     const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
-    const targetMinutesExact = totalSeconds / 60; // 소수점 포함 분 단위로 저장
+    const targetMinutesExact = totalSeconds / 60;
 
-    // 타이머 상태 로컬 업데이트
     timerState.startTime = null;
     timerState.isRunning = false;
     timerState.pausedTime = null;
-    timerState.targetMinutes = targetMinutesExact; // 현재 표시된 시간으로 targetMinutes 업데이트
+    timerState.targetMinutes = targetMinutesExact;
     timerState.activeTargetMinutes = targetMinutesExact;
 
-    // 백그라운드에 리셋 메시지 전송
     chrome.runtime.sendMessage({ 
         action: 'resetTimer',
-        targetMinutes: targetMinutesExact // 현재 표시된 시간 전달
+        targetMinutes: targetMinutesExact
     }, (response) => {
         console.log('Timer reset successfully');
     });
     
-    // 설정된 시간 저장
     chrome.storage.local.set({ targetMinutes: targetMinutesExact });
     
-    // 실행 중 interval 정리
     clearInterval(timerState.elapsedInterval);
     
-    // UI 업데이트
     const container = document.querySelector('.container');
     if (container) container.classList.remove('running');
     
@@ -618,7 +538,6 @@ function handleReset() {
 function handlePresetClick(e) {
     const timeValue = parseFloat(e.target.dataset.time || 30);
     if (!isNaN(timeValue) && timeValue > 0) {
-        // 분 단위로 저장된 값에서 정확한 초 단위를 계산
         const minutes = Math.floor(timeValue);
         const seconds = Math.round((timeValue - minutes) * 60);
         const totalSeconds = (minutes * 60) + seconds;
@@ -635,7 +554,6 @@ function handlePresetClick(e) {
         if (timeSlider) {
             timeSlider.value = totalSeconds;
         }
-        // IDLE 상태에서 타이머 디스플레이도 업데이트
         if (timerDisplay) {
             timerDisplay.textContent = formatTime(totalSeconds);
         }
@@ -647,7 +565,6 @@ function handlePresetClick(e) {
         });
         e.target.classList.add('active');
 
-        // Ensure the timer state is updated even in IDLE state
         if (currentState === TimerState.IDLE) {
             updateUIFromStatus(totalSeconds, 0, totalSeconds);
         }
@@ -666,26 +583,21 @@ function resetUI() {
     if (elapsedProgress) elapsedProgress.style.width = '0%';
     if (delayProgress) delayProgress.style.width = '0%';
     
-    // 현재 설정된 activeTargetMinutes 값을 사용하여 시간 표시 업데이트
     if (totalTime) {
         totalTime.value = formatTime(totalSeconds);
     }
     
-    // idle 상태에서의 타이머 디스플레이도 동일하게 업데이트
     if (timerDisplay) {
         timerDisplay.textContent = formatTime(totalSeconds);
     }
 }
 
 function initializeTimerState() {
-    // 먼저 저장된 타겟 시간 값을 로드하고, 그 다음에 백그라운드 상태를 요청
     chrome.storage.local.get(['targetMinutes'], (storedData) => {
-        // 저장된 시간 값이 있으면 로컬 상태에 설정
         if (storedData.targetMinutes) {
             timerState.targetMinutes = storedData.targetMinutes;
             timerState.activeTargetMinutes = storedData.targetMinutes;
             
-            // UI에 바로 표시
             const totalSeconds = timerState.activeTargetMinutes * 60;
             const totalTimeInput = document.getElementById('total-time');
             const timerDisplay = document.getElementById('timerDisplay');
@@ -699,17 +611,15 @@ function initializeTimerState() {
             }
         }
         
-        // 그 다음 백그라운드 서비스의 상태 요청
         chrome.runtime.sendMessage({ 
             action: 'getStatus',
-            savedTargetMinutes: storedData.targetMinutes // 백그라운드에 저장된 값을 알려줌
+            savedTargetMinutes: storedData.targetMinutes
         }, (res) => {
             if (res) {
                 timerState.startTime = res.startTime;
                 timerState.isRunning = res.isRunning;
                 timerState.pausedTime = res.pausedTime;
                 
-                // 실행 중이 아닐 때만 저장된 타겟 시간을 사용
                 if (!res.isRunning && !res.pausedTime) {
                     timerState.activeTargetMinutes = storedData.targetMinutes || res.activeTargetMinutes;
                 } else {
@@ -727,7 +637,6 @@ function initializeTimerState() {
                     }
                 }
 
-                // 목표 시간 업데이트
                 const targetTimeElement = document.getElementById('target-time');
                 if (targetTimeElement) {
                     targetTimeElement.textContent = formatTime(targetSeconds);
@@ -788,13 +697,12 @@ function updateUIFromStatus(remaining, delay, totalSeconds) {
     };
 
     if (elements.elapsed) {
-      // 남은 시간이 0이고 지연이 발생했으면 지연 시간을 표시
       if (remaining === 0 && delay > 0) {
         elements.elapsed.textContent = `+${formatTime(delay)}`;
-        elements.elapsed.style.color = 'var(--danger-color)'; // 지연 상태일 때는 분홍색으로 변경
+        elements.elapsed.style.color = 'var(--danger-color)';
       } else {
         elements.elapsed.textContent = formatTime(remaining);
-        elements.elapsed.style.color = 'var(--text-primary)'; // 정상 상태일 때는 원래 색상으로 복원
+        elements.elapsed.style.color = 'var(--text-primary)';
       }
     }
     
@@ -807,7 +715,7 @@ function updateUIFromStatus(remaining, delay, totalSeconds) {
       elements.totalElapsed.textContent = formatTime(total);
     }
 
-    // 남은 시간에 따라 progress bar를 줄어들게 (remaining / totalSeconds)
+    // Update progress bar based on remaining time (remaining / totalSeconds)
     const progress = (remaining / totalSeconds) * 100;
     const delayProgress = (delay / totalSeconds) * 100;
     
@@ -843,19 +751,15 @@ function setupPresetInputs() {
     
     if (!hourInput || !minuteInput || !secondInput) return;
     
-    // Format inputs with leading zeros
     formatTimeInput(hourInput);
     formatTimeInput(minuteInput);
     formatTimeInput(secondInput);
     
-    // Add input event listeners
     [hourInput, minuteInput, secondInput].forEach(input => {
-      // Handle input changes
       input.addEventListener('input', () => {
         const maxVal = input === hourInput ? 23 : 59;
         let val = parseInt(input.value) || 0;
         
-        // Enforce max value
         if (val > maxVal) {
           val = maxVal;
           input.value = val;
@@ -865,12 +769,10 @@ function setupPresetInputs() {
         updateMainInputFromTimeInputs(wrapper);
       });
       
-      // Format value when input loses focus
       input.addEventListener('blur', () => {
         formatTimeInput(input);
       });
       
-      // Select all text when focused
       input.addEventListener('focus', () => {
         input.select();
       });
@@ -890,25 +792,21 @@ function updateMainInputFromTimeInputs(wrapper) {
   const m = parseInt(minuteInput.value) || 0;
   const s = parseInt(secondInput.value) || 0;
   
-  // Format inputs with leading zeros
   formatTimeInput(hourInput);
   formatTimeInput(minuteInput);
   formatTimeInput(secondInput);
   
-  // 초 단위도 정확히 저장하기 위해 분 단위로 변환 (소수점 유지)
   const totalSeconds = h * 3600 + m * 60 + s;
-  mainInput.value = totalSeconds / 60; // 분 단위로 저장 (소수점 유지)
+  mainInput.value = totalSeconds / 60;
 }
 
 function openPresetModal() {
   chrome.storage.local.get(['presets'], (result) => {
     const presets = result.presets || [30, 41, 60];
     
-    // Setup each preset
     document.querySelectorAll('.preset-edit').forEach((preset, index) => {
       const timeValue = presets[index] || 30;
       
-      // 분 단위 값에서 시, 분, 초를 정확하게 계산
       const hours = Math.floor(timeValue / 60);
       const minutes = Math.floor(timeValue % 60);
       const seconds = Math.round((timeValue - Math.floor(timeValue)) * 60);
@@ -924,15 +822,12 @@ function openPresetModal() {
       if (mainInput) mainInput.value = timeValue;
     });
     
-    // Setup input handlers
     setupPresetInputs();
   });
   
-  // Show modal with animation
   const modal = document.getElementById('presetModal');
   if (modal) {
     modal.classList.add('show');
-    // Focus on the first hour input for immediate editing
     setTimeout(() => {
       const firstHourInput = modal.querySelector('.hour-input');
       if (firstHourInput) firstHourInput.focus();
@@ -944,7 +839,6 @@ function closePresetModal() {
     document.getElementById('presetModal').classList.remove('show');
 }
 
-// Updated function to save preset changes
 function savePresetChanges() {
   const presets = [];
   
@@ -958,18 +852,15 @@ function savePresetChanges() {
       const m = parseInt(minuteInput.value) || 0;
       const s = parseInt(secondInput.value) || 0;
       
-      // 기준은 초 단위로 통일 (시간->초, 분->초 변환)
       const totalSeconds = h * 3600 + m * 60 + s;
-      presets.push(totalSeconds / 60); // 분 단위로 저장 (소수점 유지)
+      presets.push(totalSeconds / 60);
     }
   });
   
-  // Ensure we have exactly 3 presets
   while (presets.length < 3) {
-    presets.push(30); // Default value
+    presets.push(30);
   }
   
-  // Update all presets
   if (presets.every(val => !isNaN(val) && val > 0)) {
     chrome.storage.local.set({ presets }, () => {
       updatePresetButtons(presets);
@@ -987,13 +878,12 @@ function updatePresetButtons(presets = [30, 41, 60]) {
     const buttons = document.querySelectorAll('.preset-btn');
     buttons.forEach((button, index) => {
         const timeValue = presets[index] || 30;
-        // 분 단위 값에서 분과 초를 계산 (예: 30.5는 30분 30초)
         const minutes = Math.floor(timeValue);
         const seconds = Math.round((timeValue - minutes) * 60);
         const totalSeconds = (minutes * 60) + seconds;
         
         button.textContent = formatTime(totalSeconds);
-        button.dataset.time = timeValue; // 원래 값 그대로 저장 (소수점 포함)
+        button.dataset.time = timeValue;
     });
 }
 
@@ -1065,4 +955,25 @@ function updateTimePreview() {
       timePreview.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
   });
+}
+
+function isValidTime(timeStr) {
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length !== 3) return false;
+    
+    const [hours, minutes, seconds] = parts;
+    if (isNaN(hours) || isNaN(minutes) || isNaN(seconds)) return false;
+    if (hours < 0 || hours > 23) return false;
+    if (minutes < 0 || minutes >= 60) return false;
+    if (seconds < 0 || seconds >= 60) return false;
+    
+    return true;
+}
+
+function handleTargetTimeChange(e) {
+    const value = parseInt(e.target.value, 10);
+    if (!isNaN(value) && value > 0) {
+        timerState.targetMinutes = value;
+        chrome.storage.local.set({ targetMinutes: value });
+    }
 }

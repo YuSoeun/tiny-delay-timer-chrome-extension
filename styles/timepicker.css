@@ -26,12 +26,12 @@
 }
 
 .modal-header {
-    padding: 10px 16px 8px; /* Adjusted padding for vertical balance */
+    padding: 10px 16px 8px;
     border-bottom: 1px solid rgba(138, 123, 255, 0.1);
     display: flex;
     align-items: center;
-    justify-content: center; /* Center the header content */
-    text-align: center; /* Center text */
+    justify-content: center;
+    text-align: center;
 }
 
 .modal-body {
@@ -41,12 +41,12 @@
 .modal-footer {
     display: flex;
     justify-content: center;
-    padding: 8px 0 4px; /* Adjusted for more consistent padding */
+    padding: 8px 0 4px;
     border-top: none;
     gap: 10px;
 }
 
-/* 타이머 슬라이더 모달 스타일 */
+/* Timer slider modal */
 .timer-modal {
     width: 300px;
     transform: none;
@@ -106,11 +106,11 @@
     left: 50%;
     transform: translate(-50%, -50%) scale(0.9);
     width: 280px;
-    max-height: 320px; /* 최대 높이 축소 (400px → 320px) */
-    min-height: 170px; /* 최소 높이 축소 (180px → 170px) */
+    max-height: 320px;
+    min-height: 170px;
     background: var(--card-bg);
     border-radius: 16px;
-    padding: 6px 12px; /* 위아래 패딩 축소 (8px → 6px) */
+    padding: 6px 12px;
     display: none;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     z-index: 1000;
@@ -131,9 +131,7 @@
     justify-content: center;
     align-items: center;
     position: relative;
-    /* 위아래 여백 축소 */
     margin: 4px 0;
-    /* 컨테이너 높이 축소 */
     height: 90px;
     overflow: hidden;
 }
@@ -214,7 +212,7 @@
     align-items: center;
     justify-content: center;
     scroll-snap-align: center;
-    font-size: 15px; /* 일관된 글꼴 크기로 조정 */
+    font-size: 15px;
     color: var(--text-secondary);
     transition: transform 0.2s ease, opacity 0.2s ease, color 0.2s ease, font-size 0.2s ease;
     will-change: transform, opacity, color, font-size;
@@ -235,8 +233,8 @@
 
 .time-item.active {
     color: var(--primary-color);
-    font-weight: 600; /* 너무 굵지 않게 조정 */
-    font-size: 18px; /* 활성 항목 크기 일관되게 조정 */
+    font-weight: 600;
+    font-size: 18px;
     opacity: 1;
     position: relative;
     z-index: 10;
@@ -252,7 +250,7 @@
 
 .time-item.semi-active {
     opacity: 0.8;
-    font-size: 16px; /* 반활성 항목 크기 일관되게 조정 */
+    font-size: 16px;
 }
 
 .selection-overlay {
@@ -275,9 +273,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1em; /* 더 일관된 크기로 조정 */
+    font-size: 1em;
     gap: 6px;
-    margin: 4px 0; /* 여백 축소 (6px → 4px) */
+    margin: 4px 0;
     width: 80%;
     text-align: center;
     padding: 0;
@@ -325,18 +323,18 @@
 }
 
 .btn-primary {
-    padding: 5px 0; /* 패딩 축소 (7px → 5px) */
+    padding: 5px 0;
     border: none;
-    border-radius: 8px; /* 더 작은 모서리 반경 */
+    border-radius: 8px;
     background: var(--primary-color);
     color: white;
     cursor: pointer;
-    font-size: 13px; /* 글자 크기 축소 (14px → 13px) */
+    font-size: 13px;
     font-weight: 500;
     transition: all 0.2s ease;
     box-shadow: 0 2px 4px rgba(122, 105, 230, 0.15);
-    width: 70%; /* 너비 축소 (85% → 70%) */
-    margin: 4px auto 2px; /* 위 여백 축소 (8px → 4px) */
+    width: 70%;
+    margin: 4px auto 2px;
     display: block;
     text-align: center;
     letter-spacing: 0.2px;
@@ -353,7 +351,7 @@
     box-shadow: 0 1px 4px rgba(122, 105, 230, 0.15);
 }
 
-/* Timer Container Styles */
+/* Timer Container */
 .timer-container {
     background: var(--card-bg);
     backdrop-filter: blur(10px);

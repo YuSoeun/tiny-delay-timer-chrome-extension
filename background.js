@@ -1,16 +1,16 @@
-// 서비스 워커 활성화
+// Activate service worker
 self.addEventListener('activate', (event) => {
     console.log('Service Worker activated');
 });
 
-// CSS 변수에서 색상 가져오기
-let primaryColor = '#8a7bff'; // 기본값
-let dangerColor = '#ff7eb5'; // 기본값
+// Default color values
+let primaryColor = '#8a7bff';
+let dangerColor = '#ff7eb5';
 
-// CSS 변수 값을 가져오는 함수
+// Get CSS variable values from the DOM
 function getCssVariables() {
     try {
-        // chrome.tabs API를 사용하지 않고 직접 메시지 전송
+        // Send message directly without using chrome.tabs API
         chrome.runtime.sendMessage({action: 'getCssVariables'}, function(response) {
             if (chrome.runtime.lastError) {
                 const errorMessage = chrome.runtime.lastError.message;
@@ -33,23 +33,22 @@ function getCssVariables() {
     }
 }
 
-// 초기에 한 번 실행
+// Run once at initialization
 getCssVariables();
 
 const timerState = {
     startTime: null,
     isRunning: false,
     pausedTime: null,
-    activeTargetMinutes: 30, // 실행 중인 타이머의 목표 시간
+    activeTargetMinutes: 30, // Target time for the running timer
     intervalId: null
 };
 
-// 저장된 상태 로드
+// Load saved state
 chrome.runtime.onStartup.addListener(loadState);
 chrome.runtime.onInstalled.addListener(loadState);
 
-// 메시지 수신 처리를 위에서 아래로 이동
-// 색상 변수 업데이트를 위한 메시지 리스너
+// Message handler for various timer actions
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'updateCssVariables') {
         if (message.primaryColor) primaryColor = message.primaryColor;
@@ -59,27 +58,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else if (message.action === 'startTimer') {
         startTimer(message.targetMinutes);
     } else if (message.action === 'resumeTimer') {
-        // 일시정지 후 재개 처리
+        // Resume from paused state
         if (timerState.pausedTime) {
-            // 일시정지 상태에서 경과한 시간만큼 startTime 조정
+            // Adjust startTime by the duration of the pause
             const pausedDuration = message.pausedDuration || (Date.now() - timerState.pausedTime);
             timerState.startTime += pausedDuration;
             timerState.pausedTime = null;
             timerState.isRunning = true;
             
-            // 상태 저장 및 타이머 업데이트 시작
+            // Save state and start the badge update interval
             saveState();
             timerState.intervalId = setInterval(updateBadge, 1000);
         }
     } else if (message.action === 'pauseTimer') {
         pauseTimer();
     } else if (message.action === 'resetTimer') {
-        // message.targetMinutes 값을 resetTimer 함수에 전달
+        // Pass the target minutes to reset function
         resetTimer(message.targetMinutes);
     } else if (message.action === 'getStatus') {
-        // 현재 상태를 요청하기 전에 저장된 targetMinutes 값 확인
+        // Check saved targetMinutes value before responding
         chrome.storage.local.get(['targetMinutes'], (result) => {
-            // 저장된 값이 있고 아직 설정되지 않았다면 적용
+            // Apply saved value if timer is not running yet
             if (result.targetMinutes && !timerState.startTime && !timerState.isRunning) {
                 timerState.activeTargetMinutes = result.targetMinutes;
             }
@@ -103,10 +102,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             });
         });
         
-        return true; // 비동기 응답을 위해 true 반환
+        return true; // Required for async response
     }
     
-    return true; // sendResponse 비동기 응답을 위해 필요
+    return true; // Required for async sendResponse
 });
 
 async function loadState() {
@@ -123,7 +122,7 @@ async function loadState() {
             timerState.isRunning = true;
             timerState.pausedTime = null;
             timerState.activeTargetMinutes = state.activeTargetMinutes || 30;
-            startTimer(true); // true: 저장된 상태에서 시작
+            startTimer(true); // true: start from saved state
         } else if (state.pausedTime) {
             timerState.startTime = state.startTime;
             timerState.pausedTime = state.pausedTime;
@@ -149,22 +148,22 @@ function startTimer(targetMinutes) {
     if (timerState.isRunning) return;
 
     if (timerState.pausedTime) {
-        // 일시정지 상태에서 재시작
+        // Restart from paused state
         timerState.startTime += Date.now() - timerState.pausedTime;
         timerState.pausedTime = null;
     } else {
-        // 새 타이머 시작
+        // Start a new timer
         
-        // targetMinutes가 유효하면 사용, 아니면 저장된 값이나 기본값 사용
+        // Use provided target minutes if valid, otherwise use saved or default value
         if (targetMinutes !== null && targetMinutes !== undefined) {
             timerState.activeTargetMinutes = targetMinutes;
         } else {
-            // 저장된 값이 없으면 storage에서 확인
+            // Check for saved value in storage
             chrome.storage.local.get(['targetMinutes'], (result) => {
                 if (result.targetMinutes) {
                     timerState.activeTargetMinutes = result.targetMinutes;
                 }
-                // 아무 값도 없으면 기본값 유지 (30분)
+                // Keep default value (30 min) if no saved value exists
             });
         }
         
@@ -191,17 +190,17 @@ function resetTimer(customTargetMinutes) {
     timerState.startTime = null;
     timerState.pausedTime = null;
     
-    // 매개변수로 전달된 사용자 지정 시간이 있으면 사용
+    // Use custom target minutes if provided
     if (customTargetMinutes !== undefined) {
         timerState.activeTargetMinutes = customTargetMinutes;
         saveState();
     } else {
-        // 저장된 targetMinutes 값 불러오기
+        // Load saved target minutes value
         chrome.storage.local.get(['targetMinutes'], (result) => {
             if (result.targetMinutes) {
                 timerState.activeTargetMinutes = result.targetMinutes;
             } else {
-                timerState.activeTargetMinutes = 30; // 기본값
+                timerState.activeTargetMinutes = 30; // Default value
             }
             saveState();
         });
@@ -218,38 +217,36 @@ function updateBadge() {
     const remaining = targetSeconds - elapsed;
 
     let badgeText = '';
-    // CSS 변수에서 가져온 색상 사용
+    // Use colors from CSS variables
     let badgeColor = primaryColor;
 
     if (remaining >= 0) {
         if (remaining >= 3600) {
-            // 1시간 이상일 때는 시간 단위로 표시 (1시간 = 3600초)
+            // Display in hours when over 1 hour remains
             const hours = Math.floor(remaining / 3600);
             badgeText = `${hours}h`;
         } else if (remaining >= 60) {
-            // 1분 이상 1시간 미만일 때는 분 단위로 표시
+            // Display in minutes when between 1 minute and 1 hour
             badgeText = `${Math.floor(remaining / 60)}m`;
         } else {
-            // 1분 미만일 때는 초 단위로 표시
+            // Display in seconds when less than 1 minute
             badgeText = `${Math.floor(remaining)}s`;
         }
     } else {
         const delaySeconds = Math.abs(remaining);
         if (delaySeconds >= 3600) {
-            // 지연이 1시간 이상일 때
+            // Display delay in hours when over 1 hour
             const hours = Math.floor(delaySeconds / 3600);
             badgeText = `+${hours}h`;
         } else if (delaySeconds >= 60) {
-            // 지연이 1분 이상 1시간 미만일 때
+            // Display delay in minutes when between 1 minute and 1 hour
             badgeText = `+${Math.floor(delaySeconds / 60)}m`;
         } else {
-            // 지연이 1분 미만일 때
+            // Display delay in seconds when less than 1 minute
             badgeText = `+${Math.floor(delaySeconds)}s`;
         }
-        badgeColor = dangerColor; // 지연된 경우 danger 색상 사용
+        badgeColor = dangerColor; // Use danger color for delay state
     }
-
-    console.log('Updating badge:', { badgeText, badgeColor }); // 디버그 로그 추가
 
     try {
         chrome.action.setBadgeText({ text: badgeText });

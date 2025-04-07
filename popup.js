@@ -21,15 +21,44 @@ let timerState = {
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
+    // CSS 변수 값을 가져와서 background.js로 전송
+    sendCssVariablesToBackground();
+    
     const elements = await initializeUI();
     if (!elements) {
       throw new Error('Failed to initialize UI elements');
     }
 
-    // Initialize preset buttons from storage
-    chrome.storage.local.get(['presets'], (result) => {
+    // 저장된 targetMinutes 값을 불러와서 타이머에 설정
+    chrome.storage.local.get(['targetMinutes', 'presets'], (result) => {
       if (result.presets) {
         updatePresetButtons(result.presets);
+      }
+      
+      // 저장된 타겟 시간 불러오기
+      if (result.targetMinutes) {
+        // 소수점을 포함한 분 단위에서 시, 분, 초로 변환
+        const targetMinutes = result.targetMinutes;
+        const hours = Math.floor(targetMinutes / 60);
+        const minutes = Math.floor(targetMinutes % 60);
+        const seconds = Math.round((targetMinutes - Math.floor(targetMinutes)) * 60);
+        const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+        
+        // 타이머 상태 업데이트
+        timerState.targetMinutes = targetMinutes;
+        timerState.activeTargetMinutes = targetMinutes;
+        
+        // UI 업데이트
+        const totalTimeInput = document.getElementById('total-time');
+        const timerDisplay = document.getElementById('timerDisplay');
+        
+        if (totalTimeInput) {
+          totalTimeInput.value = formatTime(totalSeconds);
+        }
+        
+        if (timerDisplay) {
+          timerDisplay.textContent = formatTime(totalSeconds);
+        }
       }
     });
 
@@ -62,6 +91,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Error initializing popup:', err);
   }
 });
+
+// CSS 변수 값을 가져와서 background.js로 전송하는 함수
+function sendCssVariablesToBackground() {
+  try {
+    const computedStyle = getComputedStyle(document.documentElement);
+    const primaryColor = computedStyle.getPropertyValue('--primary-color').trim();
+    const dangerColor = computedStyle.getPropertyValue('--danger-color').trim();
+    
+    // background.js로 CSS 변수 값 전송
+    chrome.runtime.sendMessage({
+      action: 'updateCssVariables',
+      primaryColor: primaryColor,
+      dangerColor: dangerColor
+    });
+    
+    console.log('Sent CSS variables to background:', { primaryColor, dangerColor });
+  } catch (error) {
+    console.error('Error sending CSS variables:', error);
+  }
+}
 
 async function initializeUI() {
   try {
@@ -321,6 +370,18 @@ function setupEventListeners(elements) {
                 timerState.targetMinutes = Math.ceil(totalSeconds / 60);
                 chrome.storage.local.set({ targetMinutes: timerState.targetMinutes });
             }
+        } else if (message.action === 'getCssVariables') {
+            try {
+                const computedStyle = getComputedStyle(document.documentElement);
+                const primaryColor = computedStyle.getPropertyValue('--primary-color').trim();
+                const dangerColor = computedStyle.getPropertyValue('--danger-color').trim();
+                
+                sendResponse({ primaryColor, dangerColor });
+            } catch (error) {
+                console.error('Error getting CSS variables:', error);
+                sendResponse({}); // 오류 발생 시 빈 객체 반환
+            }
+            return true; // 비동기 응답을 위해 true 반환
         }
     });
 }
@@ -435,10 +496,17 @@ function handleStart() {
     const [hours, minutes, seconds] = timeValue.split(':').map(Number);
     const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
     
-    timerState.activeTargetMinutes = Math.ceil(totalSeconds / 60);
+    // 초 단위 정보를 보존하기 위해 소수점 사용 (초÷60 = 분의 소수점 부분)
+    const targetMinutesExact = totalSeconds / 60;
+    
+    timerState.targetMinutes = targetMinutesExact; // 타겟 시간 정확히 저장
+    timerState.activeTargetMinutes = targetMinutesExact; // 활성 타겟에도 정확히 저장
     timerState.isRunning = true;
     timerState.startTime = Date.now();
     timerState.pausedTime = null;
+
+    // 설정된 시간을 스토리지에 저장 (창을 닫았다 열어도 유지되도록)
+    chrome.storage.local.set({ targetMinutes: targetMinutesExact });
 
     const container = document.querySelector('.container');
     if (container) container.classList.add('running');
@@ -452,7 +520,7 @@ function handleStart() {
 
     chrome.runtime.sendMessage({
         action: 'startTimer',
-        targetMinutes: timerState.activeTargetMinutes,
+        targetMinutes: targetMinutesExact,
         totalSeconds: totalSeconds
     });
 
@@ -497,17 +565,28 @@ function handleReset() {
         return;
     }
 
+    // 현재 표시된 시간을 사용하여 목표 시간 설정
+    const [hours, minutes, seconds] = timeValue.split(':').map(Number);
+    const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
+    const targetMinutesExact = totalSeconds / 60; // 소수점 포함 분 단위로 저장
+
     // 타이머 상태 로컬 업데이트
     timerState.startTime = null;
     timerState.isRunning = false;
     timerState.pausedTime = null;
-    timerState.activeTargetMinutes = timerState.targetMinutes;
+    timerState.targetMinutes = targetMinutesExact; // 현재 표시된 시간으로 targetMinutes 업데이트
+    timerState.activeTargetMinutes = targetMinutesExact;
 
     // 백그라운드에 리셋 메시지 전송
-    chrome.runtime.sendMessage({ action: 'resetTimer' }, (response) => {
-        // 응답을 기다릴 필요는 없지만, 로그 목적으로 첨가
+    chrome.runtime.sendMessage({ 
+        action: 'resetTimer',
+        targetMinutes: targetMinutesExact // 현재 표시된 시간 전달
+    }, (response) => {
         console.log('Timer reset successfully');
     });
+    
+    // 설정된 시간 저장
+    chrome.storage.local.set({ targetMinutes: targetMinutesExact });
     
     // 실행 중 interval 정리
     clearInterval(timerState.elapsedInterval);
@@ -566,67 +645,103 @@ function resetUI() {
     const elapsedProgress = document.getElementById('elapsed-progress');
     const delayProgress = document.getElementById('delay-progress');
     const totalTime = document.getElementById('total-time');
+    const timerDisplay = document.getElementById('timerDisplay');
     
     if (elapsedProgress) elapsedProgress.style.width = '0%';
     if (delayProgress) delayProgress.style.width = '0%';
+    
+    // 현재 설정된 activeTargetMinutes 값을 사용하여 시간 표시 업데이트
     if (totalTime) {
-        if (totalTime.tagName === 'INPUT') {
-            totalTime.value = formatTime(totalSeconds);
-        } else {
-            totalTime.textContent = formatTime(totalSeconds);
-        }
+        totalTime.value = formatTime(totalSeconds);
+    }
+    
+    // idle 상태에서의 타이머 디스플레이도 동일하게 업데이트
+    if (timerDisplay) {
+        timerDisplay.textContent = formatTime(totalSeconds);
     }
 }
 
 function initializeTimerState() {
-    chrome.runtime.sendMessage({ action: 'getStatus' }, (res) => {
-        if (res) {
-            timerState.startTime = res.startTime;
-            timerState.isRunning = res.isRunning;
-            timerState.pausedTime = res.pausedTime;
-            timerState.activeTargetMinutes = res.activeTargetMinutes;
-
-            const targetSeconds = timerState.activeTargetMinutes * 60;
-            const container = document.querySelector('.container');
-
-            if (container) {
-                if (timerState.isRunning || timerState.pausedTime) {
-                    container.classList.add('running');
-                } else {
-                    container.classList.remove('running');
-                }
+    // 먼저 저장된 타겟 시간 값을 로드하고, 그 다음에 백그라운드 상태를 요청
+    chrome.storage.local.get(['targetMinutes'], (storedData) => {
+        // 저장된 시간 값이 있으면 로컬 상태에 설정
+        if (storedData.targetMinutes) {
+            timerState.targetMinutes = storedData.targetMinutes;
+            timerState.activeTargetMinutes = storedData.targetMinutes;
+            
+            // UI에 바로 표시
+            const totalSeconds = timerState.activeTargetMinutes * 60;
+            const totalTimeInput = document.getElementById('total-time');
+            const timerDisplay = document.getElementById('timerDisplay');
+            
+            if (totalTimeInput) {
+                totalTimeInput.value = formatTime(totalSeconds);
             }
-
-            // 목표 시간 업데이트
-            const targetTimeElement = document.getElementById('target-time');
-            if (targetTimeElement) {
-                targetTimeElement.textContent = formatTime(targetSeconds);
-            }
-
-            if (timerState.isRunning) {
-                updateTimerState(TimerState.RUNNING);
-                startStatusUpdateInterval();
-            } else if (timerState.pausedTime) {
-                updateTimerState(TimerState.PAUSED);
-                updateUIFromStatus(res.remaining, res.delay, targetSeconds);
-            } else {
-                updateTimerState(TimerState.IDLE);
-                const elapsedElement = document.getElementById('elapsed');
-                if (elapsedElement) {
-                    elapsedElement.textContent = '00:00:00';
-                }
-                updateUIFromStatus(0, 0, targetSeconds);
-            }
-
-            const totalTimeElement = document.getElementById('total-time');
-            if (totalTimeElement) {
-                if (totalTimeElement.tagName === 'INPUT') {
-                    totalTimeElement.value = formatTime(targetSeconds);
-                } else {
-                    totalTimeElement.textContent = formatTime(targetSeconds);
-                }
+            
+            if (timerDisplay) {
+                timerDisplay.textContent = formatTime(totalSeconds);
             }
         }
+        
+        // 그 다음 백그라운드 서비스의 상태 요청
+        chrome.runtime.sendMessage({ 
+            action: 'getStatus',
+            savedTargetMinutes: storedData.targetMinutes // 백그라운드에 저장된 값을 알려줌
+        }, (res) => {
+            if (res) {
+                timerState.startTime = res.startTime;
+                timerState.isRunning = res.isRunning;
+                timerState.pausedTime = res.pausedTime;
+                
+                // 실행 중이 아닐 때만 저장된 타겟 시간을 사용
+                if (!res.isRunning && !res.pausedTime) {
+                    timerState.activeTargetMinutes = storedData.targetMinutes || res.activeTargetMinutes;
+                } else {
+                    timerState.activeTargetMinutes = res.activeTargetMinutes;
+                }
+
+                const targetSeconds = timerState.activeTargetMinutes * 60;
+                const container = document.querySelector('.container');
+
+                if (container) {
+                    if (timerState.isRunning || timerState.pausedTime) {
+                        container.classList.add('running');
+                    } else {
+                        container.classList.remove('running');
+                    }
+                }
+
+                // 목표 시간 업데이트
+                const targetTimeElement = document.getElementById('target-time');
+                if (targetTimeElement) {
+                    targetTimeElement.textContent = formatTime(targetSeconds);
+                }
+
+                if (timerState.isRunning) {
+                    updateTimerState(TimerState.RUNNING);
+                    startStatusUpdateInterval();
+                } else if (timerState.pausedTime) {
+                    updateTimerState(TimerState.PAUSED);
+                    updateUIFromStatus(res.remaining, res.delay, targetSeconds);
+                } else {
+                    updateTimerState(TimerState.IDLE);
+                    const elapsedElement = document.getElementById('elapsed');
+                    if (elapsedElement) {
+                        elapsedElement.textContent = '00:00:00';
+                    }
+                    updateUIFromStatus(0, 0, targetSeconds);
+                }
+
+                const totalTimeElement = document.getElementById('total-time');
+                if (totalTimeElement) {
+                    if (totalTimeElement.tagName === 'INPUT') {
+                        totalTimeElement.value = formatTime(targetSeconds);
+                    } else {
+                        totalTimeElement.textContent = formatTime(targetSeconds);
+                    }
+                }
+            }
+        });
     });
 }
 
@@ -663,7 +778,7 @@ function updateUIFromStatus(remaining, delay, totalSeconds) {
         elements.elapsed.style.color = 'var(--danger-color)'; // 지연 상태일 때는 분홍색으로 변경
       } else {
         elements.elapsed.textContent = formatTime(remaining);
-        elements.elapsed.style.color = 'var(--primary-color)'; // 정상 상태일 때는 원래 색상으로 복원
+        elements.elapsed.style.color = 'var(--text-primary)'; // 정상 상태일 때는 원래 색상으로 복원
       }
     }
     

@@ -55,9 +55,9 @@ body::after {
 
 .container {
   width: 296px;
-  height: 220px;
-  padding: 12px;
-  max-height: 220px;
+  height: auto;
+  max-height: 210px;
+  padding: 12px 12px 0;
   position: relative;
   z-index: 1;
   overflow: hidden;
@@ -609,16 +609,24 @@ input[type="number"]:focus {
 }
 
 .github-link {
+  visibility: hidden;
+}
+
+/* running 상태일 때 위치 조정 */
+.container.running .github-link {
+  visibility: visible;
   position: absolute;
-  bottom: 8px;
-  right: 8px;
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-secondary);
-  opacity: 0.8;
-  transition: all 0.2s ease;
+  opacity: 0.7;
+  padding: 2px 4px;
+  border-radius: 4px;
+  z-index: 10;
+  right: 16px;
+  bottom: 16px;
 }
 
 .github-link i {

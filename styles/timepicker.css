@@ -286,7 +286,7 @@
     padding: 4px;
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    color: var(--text-primary);
+    color: var(--primary-color);
     background: var(--card-bg);
     font-family: 'SF Mono', 'Consolas', monospace; /* Match with time-item */
     font-weight: 600;

@@ -106,18 +106,19 @@
     left: 50%;
     transform: translate(-50%, -50%) scale(0.9);
     width: 280px;
-    max-height: 82vh;
+    max-height: 320px; /* 최대 높이 축소 (400px → 320px) */
+    min-height: 170px; /* 최소 높이 축소 (180px → 170px) */
     background: var(--card-bg);
     border-radius: 16px;
-    padding: 10px; /* Reduced from 12px for more consistency */
+    padding: 6px 12px; /* 위아래 패딩 축소 (8px → 6px) */
     display: none;
-    box-shadow: var(--shadow);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     z-index: 1000;
     border: 1px solid var(--border-color);
-    backdrop-filter: blur(10px);
+    backdrop-filter: none;
     opacity: 0;
     transition: transform 0.3s ease, opacity 0.3s ease;
-    overflow: hidden; /* Changed from 'auto' to 'hidden' to remove scrollbars */
+    overflow: hidden;
 }
 
 .time-picker-modal.show {
@@ -130,8 +131,10 @@
     justify-content: center;
     align-items: center;
     position: relative;
-    margin: 6px 0; /* Reduced from 8px for more balanced spacing */
-    height: 110px;
+    /* 위아래 여백 축소 */
+    margin: 4px 0;
+    /* 컨테이너 높이 축소 */
+    height: 90px;
     overflow: hidden;
 }
 
@@ -140,21 +143,19 @@
     overflow-y: auto;
     scroll-snap-type: y mandatory;
     margin: 0 5px;
-    border: 1px solid rgba(138, 123, 255, 0.1);
-    border-radius: 10px;
+    border: 1px solid rgba(138, 123, 255, 0.08);
+    border-radius: 12px;
     background: var(--card-bg);
     position: relative;
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
     padding: 0;
-    /* Add max-height to ensure container doesn't exceed bounds */
-    max-height: 110px;
-    height: 110px;
+    max-height: 90px;
+    height: 90px;
     overscroll-behavior: contain;
-    cursor: pointer; /* Indicate clickable */
-    user-select: none; /* Prevent text selection during drag */
+    cursor: pointer;
+    user-select: none;
 }
 
-/* Add hover styles to indicate clickable areas */
 .scroll-container:before,
 .scroll-container:after {
     content: '';
@@ -163,19 +164,19 @@
     width: 100%;
     height: 33.33%;
     opacity: 0;
-    transition: opacity 0.15s ease, background-color 0.15s ease;
+    transition: opacity 0.2s ease, background-color 0.2s ease;
     z-index: 6;
     pointer-events: none;
 }
 
 .scroll-container:before {
     top: 0;
-    background: linear-gradient(to bottom, rgba(138, 123, 255, 0.15), transparent);
+    background: linear-gradient(to bottom, rgba(138, 123, 255, 0.12), transparent);
 }
 
 .scroll-container:after {
     bottom: 0;
-    background: linear-gradient(to top, rgba(138, 123, 255, 0.15), transparent);
+    background: linear-gradient(to top, rgba(138, 123, 255, 0.12), transparent);
 }
 
 .scroll-container:hover:before,
@@ -193,7 +194,6 @@
     background: linear-gradient(to top, rgba(138, 123, 255, 0.3), transparent);
 }
 
-/* Add indicators for long-press states */
 .scroll-container.fast-scrolling:before,
 .scroll-container.fast-scrolling:after {
     background-color: rgba(138, 123, 255, 0.4);
@@ -208,19 +208,21 @@
 }
 
 .time-item {
-    height: 40px;
-    line-height: 40px; /* Added to ensure text is vertically centered */
+    height: 30px;
+    line-height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
     scroll-snap-align: center;
-    font-size: 16px; /* Consistent with input fields */
+    font-size: 15px; /* 일관된 글꼴 크기로 조정 */
     color: var(--text-secondary);
-    transition: transform 0.15s ease-out, opacity 0.15s ease, color 0.15s ease, font-size 0.15s ease;
+    transition: transform 0.2s ease, opacity 0.2s ease, color 0.2s ease, font-size 0.2s ease;
     will-change: transform, opacity, color, font-size;
-    opacity: 0.5;
+    opacity: 0.65;
     font-family: 'SF Mono', 'Consolas', monospace;
-    /* Ensure text doesn't overflow */
+    font-weight: 500;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -233,12 +235,13 @@
 
 .time-item.active {
     color: var(--primary-color);
-    font-weight: bold;
-    font-size: 20px;
+    font-weight: 600; /* 너무 굵지 않게 조정 */
+    font-size: 18px; /* 활성 항목 크기 일관되게 조정 */
     opacity: 1;
     position: relative;
     z-index: 10;
     animation: pulse 0.5s ease-out;
+    text-shadow: 0 1px 1px rgba(138, 123, 255, 0.1);
 }
 
 @keyframes pulse {
@@ -248,8 +251,8 @@
 }
 
 .time-item.semi-active {
-    opacity: 0.7;
-    font-size: 18px;
+    opacity: 0.8;
+    font-size: 16px; /* 반활성 항목 크기 일관되게 조정 */
 }
 
 .selection-overlay {
@@ -257,84 +260,97 @@
     top: 50%;
     left: 0;
     right: 0;
-    height: 40px; /* Exact match with time-item height */
+    height: 30px;
     transform: translateY(-50%);
     background: rgba(138, 123, 255, 0.06);
-    border-top: 2px solid var(--primary-color);
-    border-bottom: 2px solid var(--primary-color);
+    border-top: 1.5px solid var(--primary-color);
+    border-bottom: 1.5px solid var(--primary-color);
     pointer-events: none;
     border-radius: 2px;
     z-index: 5;
+    box-shadow: 0 0 6px rgba(138, 123, 255, 0.08);
 }
 
 .input-group {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1em;
-    gap: 5px;
-    margin-bottom: 2px;
+    font-size: 1em; /* 더 일관된 크기로 조정 */
+    gap: 6px;
+    margin: 4px 0; /* 여백 축소 (6px → 4px) */
     width: 80%;
     text-align: center;
-    padding: 0 5px; /* Match the margin of scroll containers */
+    padding: 0;
 }
 
 .input-group input {
-    width: 40px; /* Reduced from 50px */
+    width: 38px;
     text-align: center;
-    font-size: 16px; /* Match the font size with time-item */
-    padding: 4px;
-    border: 1px solid var(--border-color);
+    font-size: 15px;
+    padding: 5px 2px;
+    border: 1px solid rgba(138, 123, 255, 0.15);
     border-radius: 8px;
     color: var(--primary-color);
     background: var(--card-bg);
-    font-family: 'SF Mono', 'Consolas', monospace; /* Match with time-item */
+    font-family: 'SF Mono', 'Consolas', monospace;
     font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(138, 123, 255, 0.15);
 }
 
 .input-group span {
-    font-size: 18px; /* Match with time-separator */
-    font-weight: bold;
-    color: var(--text-primary);
-    width: 12px; /* Match with time-separator */
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    width: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .time-separator {
-    font-size: 18px; /* Already consistent with input-group span */
-    font-weight: bold;
-    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 12px;
+    width: 10px;
 }
 
 .btn-primary {
-    padding: 6px 16px;
+    padding: 5px 0; /* 패딩 축소 (7px → 5px) */
     border: none;
-    border-radius: 10px;
+    border-radius: 8px; /* 더 작은 모서리 반경 */
     background: var(--primary-color);
     color: white;
     cursor: pointer;
-    font-size: 15px;
+    font-size: 13px; /* 글자 크기 축소 (14px → 13px) */
     font-weight: 500;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 8px rgba(122, 105, 230, 0.2);
-    width: 80%;
-    margin: 0 auto; /* Removed top margin for better vertical balance */
+    box-shadow: 0 2px 4px rgba(122, 105, 230, 0.15);
+    width: 70%; /* 너비 축소 (85% → 70%) */
+    margin: 4px auto 2px; /* 위 여백 축소 (8px → 4px) */
+    display: block;
+    text-align: center;
+    letter-spacing: 0.2px;
 }
 
 .btn-primary:hover {
-    background: var(--primary-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 5px 10px rgba(122, 105, 230, 0.3);
+    background: var(--primary-hover, #695dc7);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(122, 105, 230, 0.2);
 }
 
 .btn-primary:active {
     transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(122, 105, 230, 0.15);
 }
 
 /* Timer Container Styles */

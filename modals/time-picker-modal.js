@@ -77,8 +77,8 @@ export class TimePickerModal {
     this.minuteInput = document.getElementById('minuteInput');
     this.secondInput = document.getElementById('secondInput');
 
-    // Update item height to match CSS
-    this.itemHeight = 40;
+    // CSS에서 변경한 높이(30px)에 맞게 업데이트
+    this.itemHeight = 30;
 
     this.hourContainer.addEventListener("scroll", this.debounce(() => {
       // Ensure scrolling stays within bounds
@@ -437,12 +437,32 @@ export class TimePickerModal {
 
   checkViewportFit() {
     if (!this.modal) return;
+    
+    // Get the modal and viewport dimensions
     const rect = this.modal.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     const modalHeight = rect.height;
-    // If modal is too tall for the viewport, reduce its size
-    if (modalHeight > viewportHeight * 0.9) {
-      this.modal.style.maxHeight = `${viewportHeight * 0.9}px`;
+    
+    // If the time picker would be cut off, adjust positioning and size
+    if (modalHeight > viewportHeight * 0.85) {
+      // More aggressive resizing for very small viewports
+      const newHeight = Math.min(viewportHeight * 0.85, 260); // Minimum usable height
+      this.modal.style.maxHeight = `${newHeight}px`;
+      
+      // Adjust vertical position if needed
+      const topOffset = rect.top;
+      if (topOffset < 10 || (topOffset + newHeight) > viewportHeight - 10) {
+        // Position at top of viewport with small margin if no room for centering
+        if (viewportHeight < 300) {
+          this.modal.style.top = '10px';
+          this.modal.style.transform = 'translate(-50%, 0) scale(1)';
+        } else {
+          // Try to center but ensure it's fully visible
+          const safeTop = Math.max(10, Math.min(viewportHeight - newHeight - 10, viewportHeight / 2 - newHeight / 2));
+          this.modal.style.top = `${safeTop}px`;
+          this.modal.style.transform = 'translate(-50%, 0) scale(1)';
+        }
+      }
     }
   }
 
@@ -530,9 +550,26 @@ export class TimePickerModal {
     const hourIndex = this.hours.indexOf(this.selectedHour);
     const minuteIndex = this.minutes.indexOf(this.selectedMinute);
     const secondIndex = this.seconds.indexOf(this.selectedSecond);
+    
+    // Reset any previously applied position styles
+    if (this.modal) {
+      this.modal.style.top = '';
+      this.modal.style.transform = '';
+      this.modal.style.maxHeight = '';
+    }
+    
     // Show modal first so we can get proper container dimensions
     if (this.modal) {
       this.modal.style.display = 'block';
+      
+      // Check available space immediately
+      const viewportHeight = window.innerHeight;
+      if (viewportHeight < 400) {
+        // For very small viewports, position at the top with margins
+        this.modal.style.top = '10px';
+        this.modal.style.transform = 'translate(-50%, 0) scale(0.95)';
+      }
+      
       setTimeout(() => {
         // Scroll to position each item (considering padding)
         if (this.hourContainer && hourIndex > -1) {
@@ -548,6 +585,7 @@ export class TimePickerModal {
         this.checkViewportFit();
       }, 50);
     }
+    
     if (this.modalBg) {
       this.modalBg.style.display = 'block';
       setTimeout(() => {

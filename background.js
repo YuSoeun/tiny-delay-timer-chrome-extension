@@ -9,15 +9,24 @@ let dangerColor = '#ff7eb5'; // 기본값
 
 // CSS 변수를 가져오는 함수
 function getCssVariables() {
-    // 서비스워커에서는 document에 접근할 수 없으므로
-    // 메시지를 통해 popup에서 값을 가져와야 함
-    chrome.runtime.sendMessage({action: 'getCssVariables'}, (response) => {
-        if (response && response.primaryColor) {
-            primaryColor = response.primaryColor;
-            dangerColor = response.dangerColor;
-            console.log('CSS variables loaded:', {primaryColor, dangerColor});
-        }
-    });
+    try {
+        // chrome.tabs API를 사용하지 않고 직접 메시지 전송
+        chrome.runtime.sendMessage({action: 'getCssVariables'}, function(response) {
+            if (chrome.runtime.lastError) {
+                // 런타임 에러가 발생하면 무시하고 기본값 사용
+                console.log('Could not get CSS variables, using defaults:', chrome.runtime.lastError.message);
+                return;
+            }
+            
+            if (response && response.primaryColor) {
+                primaryColor = response.primaryColor;
+                dangerColor = response.dangerColor;
+                console.log('CSS variables loaded:', {primaryColor, dangerColor});
+            }
+        });
+    } catch (error) {
+        console.log('Error while getting CSS variables:', error);
+    }
 }
 
 // 초기에 한 번 실행

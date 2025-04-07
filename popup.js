@@ -104,9 +104,16 @@ function sendCssVariablesToBackground() {
       action: 'updateCssVariables',
       primaryColor: primaryColor,
       dangerColor: dangerColor
+    }, function(response) {
+      // lastError 체크로 오류 핸들링 추가
+      if (chrome.runtime.lastError) {
+        // 오류가 있지만 무시해도 괜찮음 - 백그라운드 스크립트가 아직 로드되지 않았거나 이용할 수 없을 수 있음
+        console.log('Could not update CSS variables in background script, might not be ready yet');
+        return;
+      }
+      
+      console.log('Sent CSS variables to background');
     });
-    
-    console.log('Sent CSS variables to background:', { primaryColor, dangerColor });
   } catch (error) {
     console.error('Error sending CSS variables:', error);
   }
@@ -845,6 +852,7 @@ function setupPresetInputs() {
           input.value = val;
         }
         
+        formatTimeInput(input);
         updateMainInputFromTimeInputs(wrapper);
       });
       
@@ -856,36 +864,6 @@ function setupPresetInputs() {
       // Select all text when focused
       input.addEventListener('focus', () => {
         input.select();
-      });
-      
-      // Handle keyboard navigation
-      input.addEventListener('keydown', (e) => {
-        const maxVal = input === hourInput ? 23 : 59;
-        
-        if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          let val = parseInt(input.value) || 0;
-          val = (val + 1) % (maxVal + 1);
-          input.value = String(val).padStart(2, '0');
-          updateMainInputFromTimeInputs(wrapper);
-        } else if (e.key === 'ArrowDown') {
-          e.preventDefault();
-          let val = parseInt(input.value) || 0;
-          val = (val - 1 + (maxVal + 1)) % (maxVal + 1);
-          input.value = String(val).padStart(2, '0');
-          updateMainInputFromTimeInputs(wrapper);
-        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-          // Navigate between inputs
-          e.preventDefault();
-          const inputs = [hourInput, minuteInput, secondInput];
-          const currentIndex = inputs.indexOf(input);
-          const nextIndex = currentIndex + (e.key === 'ArrowLeft' ? -1 : 1);
-          
-          if (nextIndex >= 0 && nextIndex < inputs.length) {
-            inputs[nextIndex].focus();
-            inputs[nextIndex].select();
-          }
-        }
       });
     });
   });

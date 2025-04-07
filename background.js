@@ -218,12 +218,30 @@ function updateBadge() {
     let badgeColor = primaryColor;
 
     if (remaining >= 0) {
-        // 반올림(Math.ceil) 대신 내림(Math.floor) 사용하여 더 논리적인 표시
-        badgeText = remaining >= 60 ? `${Math.floor(remaining / 60)}m` : `${Math.floor(remaining)}s`;
+        if (remaining >= 3600) {
+            // 1시간 이상일 때는 시간 단위로 표시 (1시간 = 3600초)
+            const hours = Math.floor(remaining / 3600);
+            badgeText = `${hours}h`;
+        } else if (remaining >= 60) {
+            // 1분 이상 1시간 미만일 때는 분 단위로 표시
+            badgeText = `${Math.floor(remaining / 60)}m`;
+        } else {
+            // 1분 미만일 때는 초 단위로 표시
+            badgeText = `${Math.floor(remaining)}s`;
+        }
     } else {
         const delaySeconds = Math.abs(remaining);
-        // 지연 시간도 내림 사용
-        badgeText = delaySeconds >= 60 ? `+${Math.floor(delaySeconds / 60)}m` : `+${Math.floor(delaySeconds)}s`;
+        if (delaySeconds >= 3600) {
+            // 지연이 1시간 이상일 때
+            const hours = Math.floor(delaySeconds / 3600);
+            badgeText = `+${hours}h`;
+        } else if (delaySeconds >= 60) {
+            // 지연이 1분 이상 1시간 미만일 때
+            badgeText = `+${Math.floor(delaySeconds / 60)}m`;
+        } else {
+            // 지연이 1분 미만일 때
+            badgeText = `+${Math.floor(delaySeconds)}s`;
+        }
         badgeColor = dangerColor; // 지연된 경우 danger 색상 사용
     }
 

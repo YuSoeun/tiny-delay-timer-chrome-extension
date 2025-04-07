@@ -10,7 +10,6 @@ let dangerColor = '#ff7eb5';
 // Get CSS variable values from the DOM
 function getCssVariables() {
     try {
-        // Send message directly without using chrome.tabs API
         chrome.runtime.sendMessage({action: 'getCssVariables'}, function(response) {
             if (chrome.runtime.lastError) {
                 const errorMessage = chrome.runtime.lastError.message;
@@ -48,7 +47,7 @@ const timerState = {
 chrome.runtime.onStartup.addListener(loadState);
 chrome.runtime.onInstalled.addListener(loadState);
 
-// Message handler for various timer actions
+// Message handler for timer actions
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'updateCssVariables') {
         if (message.primaryColor) primaryColor = message.primaryColor;
@@ -58,27 +57,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else if (message.action === 'startTimer') {
         startTimer(message.targetMinutes);
     } else if (message.action === 'resumeTimer') {
-        // Resume from paused state
         if (timerState.pausedTime) {
-            // Adjust startTime by the duration of the pause
             const pausedDuration = message.pausedDuration || (Date.now() - timerState.pausedTime);
             timerState.startTime += pausedDuration;
             timerState.pausedTime = null;
             timerState.isRunning = true;
             
-            // Save state and start the badge update interval
             saveState();
             timerState.intervalId = setInterval(updateBadge, 1000);
         }
     } else if (message.action === 'pauseTimer') {
         pauseTimer();
     } else if (message.action === 'resetTimer') {
-        // Pass the target minutes to reset function
         resetTimer(message.targetMinutes);
     } else if (message.action === 'getStatus') {
-        // Check saved targetMinutes value before responding
         chrome.storage.local.get(['targetMinutes'], (result) => {
-            // Apply saved value if timer is not running yet
             if (result.targetMinutes && !timerState.startTime && !timerState.isRunning) {
                 timerState.activeTargetMinutes = result.targetMinutes;
             }
@@ -105,7 +98,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true; // Required for async response
     }
     
-    return true; // Required for async sendResponse
+    return true;
 });
 
 async function loadState() {
@@ -122,7 +115,7 @@ async function loadState() {
             timerState.isRunning = true;
             timerState.pausedTime = null;
             timerState.activeTargetMinutes = state.activeTargetMinutes || 30;
-            startTimer(true); // true: start from saved state
+            startTimer(true);
         } else if (state.pausedTime) {
             timerState.startTime = state.startTime;
             timerState.pausedTime = state.pausedTime;
@@ -152,18 +145,13 @@ function startTimer(targetMinutes) {
         timerState.startTime += Date.now() - timerState.pausedTime;
         timerState.pausedTime = null;
     } else {
-        // Start a new timer
-        
-        // Use provided target minutes if valid, otherwise use saved or default value
         if (targetMinutes !== null && targetMinutes !== undefined) {
             timerState.activeTargetMinutes = targetMinutes;
         } else {
-            // Check for saved value in storage
             chrome.storage.local.get(['targetMinutes'], (result) => {
                 if (result.targetMinutes) {
                     timerState.activeTargetMinutes = result.targetMinutes;
                 }
-                // Keep default value (30 min) if no saved value exists
             });
         }
         
@@ -190,12 +178,10 @@ function resetTimer(customTargetMinutes) {
     timerState.startTime = null;
     timerState.pausedTime = null;
     
-    // Use custom target minutes if provided
     if (customTargetMinutes !== undefined) {
         timerState.activeTargetMinutes = customTargetMinutes;
         saveState();
     } else {
-        // Load saved target minutes value
         chrome.storage.local.get(['targetMinutes'], (result) => {
             if (result.targetMinutes) {
                 timerState.activeTargetMinutes = result.targetMinutes;
@@ -217,35 +203,34 @@ function updateBadge() {
     const remaining = targetSeconds - elapsed;
 
     let badgeText = '';
-    // Use colors from CSS variables
     let badgeColor = primaryColor;
 
     if (remaining >= 0) {
         if (remaining >= 3600) {
-            // Display in hours when over 1 hour remains
+            // Display in hours
             const hours = Math.floor(remaining / 3600);
             badgeText = `${hours}h`;
         } else if (remaining >= 60) {
-            // Display in minutes when between 1 minute and 1 hour
+            // Display in minutes
             badgeText = `${Math.floor(remaining / 60)}m`;
         } else {
-            // Display in seconds when less than 1 minute
+            // Display in seconds
             badgeText = `${Math.floor(remaining)}s`;
         }
     } else {
         const delaySeconds = Math.abs(remaining);
         if (delaySeconds >= 3600) {
-            // Display delay in hours when over 1 hour
+            // Display delay in hours
             const hours = Math.floor(delaySeconds / 3600);
             badgeText = `+${hours}h`;
         } else if (delaySeconds >= 60) {
-            // Display delay in minutes when between 1 minute and 1 hour
+            // Display delay in minutes
             badgeText = `+${Math.floor(delaySeconds / 60)}m`;
         } else {
-            // Display delay in seconds when less than 1 minute
+            // Display delay in seconds
             badgeText = `+${Math.floor(delaySeconds)}s`;
         }
-        badgeColor = dangerColor; // Use danger color for delay state
+        badgeColor = dangerColor;
     }
 
     try {

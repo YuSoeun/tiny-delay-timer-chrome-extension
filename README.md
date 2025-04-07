@@ -7,8 +7,8 @@ Shows elapsed and overtime directly on the icon badge.
 
 ## 🙋‍♂️ Why?
 
-I made this to track how long I spend on solving Baekjoon problems — and to push myself to finish before the time’s up.  
-It’s a personal timer, made simple and useful. Hope it helps you too.
+I made this to track how long I spend on solving Baekjoon problems — and to push myself to finish before the time's up.  
+It's a personal timer, made simple and useful. Hope it helps you too.
 
 ---
 
@@ -29,13 +29,19 @@ It’s a personal timer, made simple and useful. Hope it helps you too.
 
 2. After installing, click the timer icon on your Chrome toolbar
 
-3. Set your target time and start solving Baekjoon problems!
+3. Set your target time using one of these methods:
+   - Click the time presets (30min, 41min, 60min)
+   - Click on the time display to open the time picker
+   - Edit time presets by clicking the settings icon
 
-- The icon badge will show:
-  - Elapsed time (e.g., `25m`)
-  - Delay time if you exceed your target (e.g., `+3m`)
+4. Start the timer and begin solving your Baekjoon problem!
 
-*No signup, no configuration — just install and start timing.*
+5. The extension will:
+   - Show remaining time while solving
+   - Display delay time in red if you exceed your target
+   - Track total elapsed time
+
+*Time badge will appear on the extension icon showing progress at a glance*
 
 ---
 
@@ -45,10 +51,16 @@ It’s a personal timer, made simple and useful. Hope it helps you too.
 boj-delay-timer-chrome-extension/
 ├── manifest.json         # Chrome extension config (Manifest V3)
 ├── background.js         # Core timer & badge update logic
-├── popup.html            # (Optional) Popup UI for user controls
-├── popup.js
-├── content.js            # (Optional) Overlay timer on Baekjoon page
-├── style.css
+├── popup.html            # Main popup UI with timer controls
+├── popup.js              # Timer logic and UI interactions
+├── styles.css            # Main stylesheet
+├── styles/               # Additional CSS files
+│   ├── layout.css        # Layout styling
+│   ├── preset-modal.css  # Preset editor modal styling
+│   └── timepicker.css    # Time picker styling
+├── modals/               # Modal component modules
+│   ├── preset-modal.js   # Preset editor functionality
+│   └── time-picker-modal.js  # Time picker functionality
 └── icons/                # Toolbar icons
 ```
 

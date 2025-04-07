@@ -21,6 +21,9 @@ let timerState = {
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
+    // CSS 변수 값을 가져와서 background.js로 전송
+    sendCssVariablesToBackground();
+    
     const elements = await initializeUI();
     if (!elements) {
       throw new Error('Failed to initialize UI elements');
@@ -88,6 +91,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Error initializing popup:', err);
   }
 });
+
+// CSS 변수 값을 가져와서 background.js로 전송하는 함수
+function sendCssVariablesToBackground() {
+  try {
+    const computedStyle = getComputedStyle(document.documentElement);
+    const primaryColor = computedStyle.getPropertyValue('--primary-color').trim();
+    const dangerColor = computedStyle.getPropertyValue('--danger-color').trim();
+    
+    // background.js로 CSS 변수 값 전송
+    chrome.runtime.sendMessage({
+      action: 'updateCssVariables',
+      primaryColor: primaryColor,
+      dangerColor: dangerColor
+    });
+    
+    console.log('Sent CSS variables to background:', { primaryColor, dangerColor });
+  } catch (error) {
+    console.error('Error sending CSS variables:', error);
+  }
+}
 
 async function initializeUI() {
   try {
@@ -347,6 +370,18 @@ function setupEventListeners(elements) {
                 timerState.targetMinutes = Math.ceil(totalSeconds / 60);
                 chrome.storage.local.set({ targetMinutes: timerState.targetMinutes });
             }
+        } else if (message.action === 'getCssVariables') {
+            try {
+                const computedStyle = getComputedStyle(document.documentElement);
+                const primaryColor = computedStyle.getPropertyValue('--primary-color').trim();
+                const dangerColor = computedStyle.getPropertyValue('--danger-color').trim();
+                
+                sendResponse({ primaryColor, dangerColor });
+            } catch (error) {
+                console.error('Error getting CSS variables:', error);
+                sendResponse({}); // 오류 발생 시 빈 객체 반환
+            }
+            return true; // 비동기 응답을 위해 true 반환
         }
     });
 }

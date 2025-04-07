@@ -69,8 +69,8 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(51, 51, 68, 0.4); /* Lighter background overlay */
-  backdrop-filter: blur(2px); /* Lighter blur effect */
+  background: rgba(51, 51, 68, 0.6); /* 타임피커와 동일한 배경 투명도 */
+  backdrop-filter: blur(4px);
   z-index: 1000;
   justify-content: center;
   align-items: center;
@@ -84,28 +84,30 @@
 /* Simplified Preset Modal */
 #presetModal .modal-content {
   width: 280px;
-  background: rgba(255, 255, 255, 0.9); /* Brighter background */
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(138, 123, 255, 0.15), 0 3px 8px rgba(138, 123, 255, 0.1); /* Colorful shadow */
-  border: 1px solid rgba(255, 255, 255, 0.7); /* Lighter border */
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-color);
   overflow: hidden;
-  max-height: 200px; /* 세로 길이 줄임 */
+  max-height: 320px;
+  padding: 0; /* 추가된 패딩 제거 */
+  margin: 0; /* 마진 제거 */
 }
 
 #presetModal .modal-header {
-  padding: 6px 12px; /* 패딩 줄임 */
+  padding: 8px 12px; /* 패딩 축소 (10px → 8px) */
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid rgba(138, 123, 255, 0.1);
-  background: rgba(249, 248, 255, 0.8); /* Lighter header background with subtle color */
+  background: var(--card-bg);
 }
 
 #presetModal .modal-header h3 {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: var(--primary-color); /* Title uses primary color */
+  color: var(--primary-color);
   display: flex;
   align-items: center;
   gap: 5px;
@@ -113,21 +115,23 @@
 
 #presetModal .modal-header h3 i {
   color: var(--primary-color);
-  font-size: 14px; /* Slightly larger icon */
+  font-size: 14px;
 }
 
 /* 헤더 버튼 컨테이너 */
 .header-buttons {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px; /* 간격 증가 */
 }
 
 /* 작은 프라이머리 버튼 */
 .btn-small {
-  padding: 2px 8px;
-  font-size: 11px;
-  border-radius: 4px;
+  padding: 3px 8px; /* 패딩 축소 (4px 10px → 3px 8px) */
+  font-size: 11px; /* 글꼴 크기 축소 (12px → 11px) */
+  border-radius: 6px;
+  white-space: nowrap;
+  letter-spacing: 0;
 }
 
 #presetModal .close-btn {
@@ -151,19 +155,20 @@
 }
 
 #presetModal .modal-body {
-  padding: 8px 12px; /* Slightly more padding */
-  background: rgba(253, 252, 255, 0.7); /* Brighter body background */
+  padding: 8px 12px; /* 패딩 축소 (10px → 8px) */
+  background: var(--card-bg);
 }
 
 /* Ultra-compact Preset Edit Rows */
 .preset-edit {
-  margin-bottom: 4px; /* 세로 간격 줄임 */
-  padding: 2px 6px; /* 세로 패딩 줄임 */
+  margin-bottom: 4px; /* 마진 축소 (6px → 4px) */
+  padding: 2px 4px; /* 패딩 축소 (3px → 2px) */
   display: flex;
   align-items: center;
-  border-bottom: 1px solid rgba(138, 123, 255, 0.07); /* Very subtle divider */
+  border-bottom: 1px solid rgba(138, 123, 255, 0.08);
   width: 100%;
   box-sizing: border-box;
+  transition: background-color 0.2s ease;
 }
 
 .preset-edit:last-child {
@@ -171,15 +176,21 @@
   border-bottom: none;
 }
 
+.preset-edit:hover {
+  background-color: rgba(138, 123, 255, 0.03); /* 미세한 호버 효과 */
+}
+
 /* Label */
 .preset-edit label {
-  width: 18px;
-  font-size: 12px;
+  width: 20px;
+  font-size: 13px;
   color: var(--text-secondary);
   font-weight: 500;
   margin: 0;
   flex-shrink: 0;
   text-align: center;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Time Input Wrapper */
@@ -195,11 +206,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 5px; /* 세로 패딩 줄임 */
-  border-radius: 6px; /* Rounder corners */
-  border: 1px solid rgba(138, 123, 255, 0.15); /* Colorful border */
-  background: rgba(255, 255, 255, 0.9); /* Brighter inputs */
+  padding: 3px 6px; /* 세로 패딩 축소 (4px → 3px) */
+  border-radius: 8px;
+  border: 1px solid rgba(138, 123, 255, 0.15);
+  background: var(--card-bg);
   flex: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 /* Hidden main input */
@@ -211,15 +223,17 @@
 .time-input-wrapper .hour-input,
 .time-input-wrapper .minute-input,
 .time-input-wrapper .second-input {
-  width: 24px; /* Slightly wider */
+  width: 26px;
   border: none;
   background: transparent;
-  color: var(--text-primary);
-  font-size: 14px; /* Slightly larger */
+  color: var(--primary-color);
+  font-size: 14px; /* 글꼴 크기 축소 (15px → 14px) */
   font-weight: 600;
   font-family: 'SF Mono', 'Consolas', monospace;
-  padding: 0; /* 패딩 제거 */
+  padding: 0;
   text-align: center;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .time-input-wrapper input:focus {
@@ -228,9 +242,9 @@
 }
 
 .time-input-wrapper .time-separator {
-  font-size: 13px;
-  color: rgba(138, 123, 255, 0.5); /* Colorful separators */
-  width: 6px;
+  font-size: 15px; /* 타임피커와 동일한 크기 */
+  color: var(--text-secondary); /* 타임피커와 동일한 색상 */
+  width: 8px; /* 약간 넓게 */
   text-align: center;
 }
 
@@ -255,7 +269,7 @@
 /* Focus state */
 .time-input-wrapper:focus-within .numeric-inputs {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(138, 123, 255, 0.1); /* Subtle focus glow */
+  box-shadow: 0 0 0 2px rgba(138, 123, 255, 0.15); /* 타임피커와 동일한 포커스 효과 */
 }
 
 .time-input-wrapper:focus-within .time-separator {
@@ -272,6 +286,59 @@
   display: none;
 }
 
+/* 저장/취소 버튼 컨테이너 */
+.preset-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* 저장 버튼 */
+#savePresets {
+  padding: 5px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary-color);
+  color: white;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(122, 105, 230, 0.15);
+  width: 70%;
+  margin: 4px auto 4px;
+  display: block;
+  text-align: center;
+  letter-spacing: 0.2px;
+}
+
+#savePresets:hover {
+  background: var(--primary-hover, #695dc7);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(122, 105, 230, 0.2);
+}
+
+/* 취소 버튼 */
+#cancelPresets {
+  padding: 5px 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid rgba(138, 123, 255, 0.15);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  width: 30%;
+  margin: 4px auto 2px;
+  display: none; /* 기존 레이아웃을 유지하기 위해 숨김 처리 */
+  text-align: center;
+  letter-spacing: 0.2px;
+}
+
 /* Footer styling - 사용 안 함 */
 #presetModal .modal-footer {
   display: none; /* 푸터 숨김 */
@@ -280,8 +347,8 @@
 /* Button styling */
 .btn {
   padding: 5px 12px;
-  font-size: 12px;
-  border-radius: 6px; /* Rounder buttons */
+  font-size: 13px; /* 타임피커와 동일한 크기 */
+  border-radius: 8px; /* 타임피커와 동일한 모서리 둥글기 */
   background: transparent;
   border: none;
   color: var(--text-secondary);
@@ -290,21 +357,30 @@
   align-items: center;
   gap: 4px;
   font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary-color), #7b68ee); /* Gradient background */
+  background: var(--primary-color); /* 타임피커와 동일한 단색 배경 */
   color: white;
-  box-shadow: 0 2px 6px rgba(138, 123, 255, 0.25); /* Button shadow for depth */
+  box-shadow: 0 2px 4px rgba(122, 105, 230, 0.15); /* 타임피커와 동일한 그림자 */
+  display: inline-block;
+  text-align: center;
 }
 
 .btn:hover {
-  opacity: 0.95;
-  transform: translateY(-1px); /* Subtle hover effect */
+  opacity: 1;
+  transform: translateY(-1px);
 }
 
 .btn-primary:hover {
-  box-shadow: 0 3px 8px rgba(138, 123, 255, 0.35); /* Enhanced shadow on hover */
+  background: var(--primary-hover, #695dc7); /* 타임피커와 동일한 호버 색상 */
+  box-shadow: 0 3px 8px rgba(122, 105, 230, 0.2); /* 타임피커와 동일한 호버 그림자 */
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(122, 105, 230, 0.15); /* 타임피커와 동일한 액티브 그림자 */
 }
 
 @media (max-width: 480px) {

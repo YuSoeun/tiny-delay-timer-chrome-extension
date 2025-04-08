@@ -397,7 +397,6 @@ function updateTimerState(newState) {
       break;
       
     case TimerState.RUNNING:
-      // In RUNNING state, hide timer display and show running state
       idleState.classList.remove('active');
       runningState.classList.add('active');
       
@@ -406,7 +405,6 @@ function updateTimerState(newState) {
       break;
       
     case TimerState.PAUSED:
-      // In PAUSED state, hide timer display and show running state
       idleState.classList.remove('active');
       runningState.classList.add('active');
       
@@ -429,8 +427,8 @@ function handleStart() {
     if (timerState.pausedTime !== null) {
         console.log('Resuming from paused state');
         
-        const pausedDuration = Date.now() - timerState.pausedTime;
-        timerState.startTime += pausedDuration;
+        timerState.elapsedAtPause = timerState.elapsedAtPause || 0;
+        timerState.startTime = Date.now() - timerState.elapsedAtPause;
         timerState.pausedTime = null;
         timerState.isRunning = true;
 
@@ -438,7 +436,7 @@ function handleStart() {
         
         chrome.runtime.sendMessage({
             action: 'resumeTimer',
-            pausedDuration: pausedDuration
+            elapsedAtPause: timerState.elapsedAtPause
         });
         
         startStatusUpdateInterval();
@@ -455,6 +453,7 @@ function handleStart() {
     timerState.isRunning = true;
     timerState.startTime = Date.now();
     timerState.pausedTime = null;
+    timerState.elapsedAtPause = 0;
 
     chrome.storage.local.set({ targetMinutes: targetMinutesExact });
 
@@ -489,15 +488,37 @@ function handlePause() {
         return;
     }
     
+    // 밀리초 단위로 경과 시간 저장
+    const elapsedMs = Date.now() - timerState.startTime;
+    timerState.elapsedAtPause = elapsedMs;
+    
     timerState.isRunning = false;
     timerState.pausedTime = Date.now();
     
-    chrome.runtime.sendMessage({ action: 'pauseTimer' });
+    // 백그라운드 스크립트에 일시정지 상태 전달
+    chrome.runtime.sendMessage({ 
+        action: 'pauseTimer',
+        elapsedAtPause: elapsedMs
+    });
+    
+    // 로컬 스토리지에 직접 상태 저장 (이중 보호)
+    chrome.storage.local.set({
+        timerStatus: 'paused',
+        pausedTime: timerState.pausedTime,
+        startTime: timerState.startTime,
+        elapsedAtPause: elapsedMs,
+        activeTargetMinutes: timerState.activeTargetMinutes
+    });
+    
+    // UI 상태 즉시 업데이트
+    const targetSeconds = timerState.activeTargetMinutes * 60;
+    const elapsed = Math.floor(elapsedMs / 1000);
+    const remaining = Math.max(targetSeconds - elapsed, 0);
+    const delay = Math.max(elapsed - targetSeconds, 0);
+    updateUIFromStatus(remaining, delay, targetSeconds);
     
     updateTimerState(TimerState.PAUSED);
     clearInterval(timerState.elapsedInterval);
-    
-    console.log('Timer paused successfully');
 }
 
 function handleReset() {
@@ -593,7 +614,8 @@ function resetUI() {
 }
 
 function initializeTimerState() {
-    chrome.storage.local.get(['targetMinutes'], (storedData) => {
+    chrome.storage.local.get(['targetMinutes', 'timerStatus', 'pausedTime', 'startTime', 'elapsedAtPause', 'activeTargetMinutes'], (storedData) => {
+        // 타겟 시간 초기화
         if (storedData.targetMinutes) {
             timerState.targetMinutes = storedData.targetMinutes;
             timerState.activeTargetMinutes = storedData.targetMinutes;
@@ -611,6 +633,40 @@ function initializeTimerState() {
             }
         }
         
+        // 저장된 명시적 타이머 상태가 있으면 먼저 확인
+        if (storedData.timerStatus === 'paused' && storedData.pausedTime) {
+            // 일시정지 상태를 로컬에서 직접 복원
+            timerState.isRunning = false;
+            timerState.startTime = storedData.startTime;
+            timerState.pausedTime = storedData.pausedTime;
+            timerState.elapsedAtPause = storedData.elapsedAtPause;
+            timerState.activeTargetMinutes = storedData.activeTargetMinutes || storedData.targetMinutes;
+
+            const targetSeconds = timerState.activeTargetMinutes * 60;
+            
+            // 남은 시간과 지연 시간 계산 
+            // Math.floor 사용하여 배지와 동일한 값 보장
+            let elapsed = 0;
+            if (timerState.elapsedAtPause) {
+                elapsed = Math.floor(timerState.elapsedAtPause / 1000);
+            } else if (timerState.startTime) {
+                elapsed = Math.floor((timerState.pausedTime - timerState.startTime) / 1000);
+            }
+            
+            const remaining = Math.max(targetSeconds - elapsed, 0);
+            const delay = Math.max(elapsed - targetSeconds, 0);
+
+            // UI 업데이트
+            const container = document.querySelector('.container');
+            if (container) container.classList.add('running');
+
+            updateTimerState(TimerState.PAUSED);
+            updateUIFromStatus(remaining, delay, targetSeconds);
+            
+            return; // 로컬 상태로부터 복원 완료, 백그라운드 검증 불필요
+        }
+        
+        // 로컬에 명시적 상태가 없으면 백그라운드 서비스에서 상태 확인
         chrome.runtime.sendMessage({ 
             action: 'getStatus',
             savedTargetMinutes: storedData.targetMinutes
@@ -619,6 +675,10 @@ function initializeTimerState() {
                 timerState.startTime = res.startTime;
                 timerState.isRunning = res.isRunning;
                 timerState.pausedTime = res.pausedTime;
+                
+                if (res.elapsedAtPause) {
+                    timerState.elapsedAtPause = res.elapsedAtPause;
+                }
                 
                 if (!res.isRunning && !res.pausedTime) {
                     timerState.activeTargetMinutes = storedData.targetMinutes || res.activeTargetMinutes;
@@ -645,7 +705,8 @@ function initializeTimerState() {
                 if (timerState.isRunning) {
                     updateTimerState(TimerState.RUNNING);
                     startStatusUpdateInterval();
-                } else if (timerState.pausedTime) {
+                } else if (res.pausedTime) {
+                    // 백그라운드에서 받은 값을 그대로 사용해서 일관성 유지
                     updateTimerState(TimerState.PAUSED);
                     updateUIFromStatus(res.remaining, res.delay, targetSeconds);
                 } else {
@@ -677,13 +738,33 @@ function startStatusUpdateInterval() {
         if (!timerState.isRunning) return;
 
         const now = Date.now();
-        const elapsed = Math.floor((now - timerState.startTime) / 1000);
+        // 정확한 밀리초 -> 초 변환 후 내림 처리
+        const elapsedMs = now - timerState.startTime;
+        const elapsed = Math.floor(elapsedMs / 1000);
+        
+        // 디버깅용 로그 추가
+        if (elapsed % 10 === 0) { // 10초마다 로깅
+            console.log(`Running: Elapsed time ${elapsedMs}ms, ${elapsed}s`);
+        }
+        
         const totalSeconds = timerState.activeTargetMinutes * 60;
         const remaining = Math.max(totalSeconds - elapsed, 0);
         const delay = Math.max(elapsed - totalSeconds, 0);
 
         updateUIFromStatus(remaining, delay, totalSeconds);
     }, 1000);
+    
+    // 타이머 시작 시 즉시 첫 업데이트 실행
+    if (timerState.isRunning) {
+        const now = Date.now();
+        const elapsedMs = now - timerState.startTime;
+        const elapsed = Math.floor(elapsedMs / 1000);
+        const totalSeconds = timerState.activeTargetMinutes * 60;
+        const remaining = Math.max(totalSeconds - elapsed, 0);
+        const delay = Math.max(elapsed - totalSeconds, 0);
+        
+        updateUIFromStatus(remaining, delay, totalSeconds);
+    }
 }
 
 function updateUIFromStatus(remaining, delay, totalSeconds) {
@@ -715,7 +796,6 @@ function updateUIFromStatus(remaining, delay, totalSeconds) {
       elements.totalElapsed.textContent = formatTime(total);
     }
 
-    // Update progress bar based on remaining time (remaining / totalSeconds)
     const progress = (remaining / totalSeconds) * 100;
     const delayProgress = (delay / totalSeconds) * 100;
     
@@ -732,7 +812,8 @@ function updateUIFromStatus(remaining, delay, totalSeconds) {
 }
 
 function formatTime(seconds) {
-    seconds = Math.ceil(seconds);
+    // Math.ceil에서 Math.floor로 변경하여 배지 표시와 일관되게 내림 적용
+    seconds = Math.floor(seconds);
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;

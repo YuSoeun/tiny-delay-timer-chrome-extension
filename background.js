@@ -50,65 +50,90 @@ chrome.runtime.onInstalled.addListener(loadState);
 
 // Message handler for timer actions
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.action === 'updateCssVariables') {
-        if (message.primaryColor) primaryColor = message.primaryColor;
-        if (message.dangerColor) dangerColor = message.dangerColor;
-        console.log('CSS variables updated:', {primaryColor, dangerColor});
-        return true;
-    } else if (message.action === 'startTimer') {
-        startTimer(message.targetMinutes);
-    } else if (message.action === 'resumeTimer') {
-        if (timerState.pausedTime) {
-            if (message.elapsedAtPause !== undefined) {
-                timerState.elapsedAtPause = message.elapsedAtPause;
-                timerState.startTime = Date.now() - timerState.elapsedAtPause;
-            } else {
-                const pausedDuration = message.pausedDuration || (Date.now() - timerState.pausedTime);
-                timerState.startTime += pausedDuration;
+    try {
+        if (message.action === 'updateCssVariables') {
+            if (message.primaryColor) primaryColor = message.primaryColor;
+            if (message.dangerColor) dangerColor = message.dangerColor;
+            console.log('CSS variables updated:', {primaryColor, dangerColor});
+            sendResponse({ success: true });
+        } else if (message.action === 'startTimer') {
+            const result = startTimer(message.targetMinutes);
+            sendResponse({ success: result });
+        } else if (message.action === 'resumeTimer') {
+            const result = resumeTimer(message.elapsedAtPause);
+            sendResponse({ success: result });
+        } else if (message.action === 'pauseTimer') {
+            const result = pauseTimer();
+            sendResponse({ success: result });
+        } else if (message.action === 'resetTimer') {
+            const result = resetTimer(message.targetMinutes);
+            sendResponse({ success: result });
+        } else if (message.action === 'getStatus') {
+            // Handle immediately without async operations to avoid message port closure
+            const status = getTimerStatus(message.savedTargetMinutes);
+            sendResponse(status);
+        } else if (message.action === 'checkBadgeStatus') {
+            // Check badge update interval and recover if needed
+            const isIntervalActive = timerState.intervalId !== null;
+            
+            // Create new interval if timer is running but interval is missing
+            if (timerState.isRunning && !isIntervalActive) {
+                startBadgeInterval();
             }
             
-            timerState.pausedTime = null;
-            timerState.isRunning = true;
-            
-            saveState();
-            timerState.intervalId = setInterval(updateBadge, 1000);
-        }
-    } else if (message.action === 'pauseTimer') {
-        pauseTimer();
-    } else if (message.action === 'resetTimer') {
-        resetTimer(message.targetMinutes);
-    } else if (message.action === 'getStatus') {
-        chrome.storage.local.get(['targetMinutes'], (result) => {
-            if (result.targetMinutes && !timerState.startTime && !timerState.isRunning) {
-                timerState.activeTargetMinutes = result.targetMinutes;
-            }
-            
-            const now = Date.now();
-            let elapsed = 0;
-            if (timerState.startTime) {
-                // 올바른 계산: 먼저 밀리초 차이를 구한 다음 초 단위로 변환 후 내림
-                elapsed = Math.floor(((timerState.pausedTime || now) - timerState.startTime) / 1000);
-            }
-            const targetSeconds = timerState.activeTargetMinutes * 60;
-            const remaining = Math.max(targetSeconds - elapsed, 0);
-            const delay = Math.max(elapsed - targetSeconds, 0);
-
             sendResponse({
                 isRunning: timerState.isRunning,
-                startTime: timerState.startTime,
-                pausedTime: timerState.pausedTime,
-                activeTargetMinutes: timerState.activeTargetMinutes,
-                elapsedAtPause: timerState.elapsedAtPause,
-                remaining,
-                delay
+                hasInterval: isIntervalActive
             });
-        });
-        
-        return true;
+        } else if (message.action === 'getCssVariables') {
+            // Simple responses should be sent immediately
+            sendResponse({ primaryColor, dangerColor });
+        } else {
+            sendResponse({ success: false, error: "Unknown action" });
+        }
+    } catch (error) {
+        console.error('Error handling message:', error, message);
+        sendResponse({ success: false, error: error.message });
     }
     
-    return true;
+    // Always return false to indicate we're not using sendResponse asynchronously
+    return false;
 });
+
+// Separated into its own function for synchronous call in message handler
+function getTimerStatus(savedTargetMinutes) {
+    try {
+        if (savedTargetMinutes && !timerState.startTime && !timerState.isRunning) {
+            timerState.activeTargetMinutes = savedTargetMinutes;
+        }
+        
+        const now = Date.now();
+        let elapsed = 0;
+        if (timerState.startTime) {
+            // Calculate elapsed time in ms first, then convert to seconds with floor
+            elapsed = Math.floor(((timerState.pausedTime || now) - timerState.startTime) / 1000);
+        }
+        const targetSeconds = timerState.activeTargetMinutes * 60;
+        const remaining = Math.max(targetSeconds - elapsed, 0);
+        const delay = Math.max(elapsed - targetSeconds, 0);
+
+        return {
+            isRunning: timerState.isRunning,
+            startTime: timerState.startTime,
+            pausedTime: timerState.pausedTime,
+            activeTargetMinutes: timerState.activeTargetMinutes,
+            elapsedAtPause: timerState.elapsedAtPause,
+            remaining,
+            delay
+        };
+    } catch (error) {
+        console.error('Error getting timer status:', error);
+        return {
+            isRunning: false,
+            error: error.message
+        };
+    }
+}
 
 async function loadState() {
     try {
@@ -118,31 +143,43 @@ async function loadState() {
             'pausedTime',
             'activeTargetMinutes',
             'elapsedAtPause',
-            'timerStatus'  // 추가: 명시적 타이머 상태 저장
+            'timerStatus',  // Explicit timer state flag
+            'targetMinutes' // Default target time
         ]);
+
+        console.log('Loaded state:', state);
+
+        // Set default timer time if available
+        if (state.targetMinutes) {
+            timerState.activeTargetMinutes = state.targetMinutes;
+        }
 
         if (state.elapsedAtPause) {
             timerState.elapsedAtPause = state.elapsedAtPause;
         }
 
-        // 명시적으로 저장된 상태가 있으면 그대로 복원
+        // Restore explicit saved state if available
         if (state.timerStatus === 'paused' && state.pausedTime) {
             timerState.startTime = state.startTime;
             timerState.pausedTime = state.pausedTime;
             timerState.isRunning = false;
-            timerState.activeTargetMinutes = state.activeTargetMinutes || 30;
+            timerState.activeTargetMinutes = state.activeTargetMinutes || state.targetMinutes || 30;
             updateBadge();
         } else if (state.isRunning && state.startTime) {
             timerState.startTime = state.startTime;
             timerState.isRunning = true;
             timerState.pausedTime = null;
-            timerState.activeTargetMinutes = state.activeTargetMinutes || 30;
-            startTimer(true);
+            timerState.activeTargetMinutes = state.activeTargetMinutes || state.targetMinutes || 30;
+            if (timerState.intervalId) {
+                clearInterval(timerState.intervalId);
+            }
+            timerState.intervalId = setInterval(updateBadge, 1000);
+            updateBadge();
         } else if (state.pausedTime) {
             timerState.startTime = state.startTime;
             timerState.pausedTime = state.pausedTime;
             timerState.isRunning = false;
-            timerState.activeTargetMinutes = state.activeTargetMinutes || 30;
+            timerState.activeTargetMinutes = state.activeTargetMinutes || state.targetMinutes || 30;
             updateBadge();
         }
     } catch (error) {
@@ -152,7 +189,7 @@ async function loadState() {
 }
 
 function saveState() {
-    // 현재 타이머 상태를 명시적으로 저장
+    // Save explicit timer state flag
     let timerStatus = 'idle';
     if (timerState.isRunning) {
         timerStatus = 'running';
@@ -160,26 +197,52 @@ function saveState() {
         timerStatus = 'paused';
     }
     
-    chrome.storage.local.set({
+    const stateToSave = {
         isRunning: timerState.isRunning,
         startTime: timerState.startTime,
         pausedTime: timerState.pausedTime,
         activeTargetMinutes: timerState.activeTargetMinutes,
         elapsedAtPause: timerState.elapsedAtPause,
         timerStatus: timerStatus
-    });
+    };
+    
+    console.log('Saving state:', stateToSave);
+    
+    chrome.storage.local.set(stateToSave);
+}
+
+function startBadgeInterval() {
+    // Clean up existing interval before creating a new one
+    if (timerState.intervalId) {
+        clearInterval(timerState.intervalId);
+        timerState.intervalId = null;
+    }
+    
+    // Start new interval
+    timerState.intervalId = setInterval(updateBadge, 1000);
+    console.log('Created new badge update interval');
+    
+    // Update badge immediately
+    updateBadge();
 }
 
 function startTimer(targetMinutes) {
-    if (timerState.isRunning) return;
+    console.log('startTimer called with targetMinutes:', targetMinutes);
+    
+    if (timerState.isRunning) return false;
 
     if (timerState.pausedTime) {
-        timerState.startTime += Date.now() - timerState.pausedTime;
+        // Resume from paused state
+        const pausedDuration = Date.now() - timerState.pausedTime;
+        timerState.startTime += pausedDuration;
         timerState.pausedTime = null;
+        console.log('Resuming from paused state, new startTime:', timerState.startTime);
     } else {
+        // Start new timer
         if (targetMinutes !== null && targetMinutes !== undefined) {
             timerState.activeTargetMinutes = targetMinutes;
         } else {
+            // Use saved target time if available
             chrome.storage.local.get(['targetMinutes'], (result) => {
                 if (result.targetMinutes) {
                     timerState.activeTargetMinutes = result.targetMinutes;
@@ -188,56 +251,115 @@ function startTimer(targetMinutes) {
         }
         
         timerState.startTime = Date.now();
+        console.log('Starting new timer with targetMinutes:', timerState.activeTargetMinutes);
     }
 
     timerState.isRunning = true;
     saveState();
+    
+    startBadgeInterval();
+    return true;
+}
 
-    timerState.intervalId = setInterval(updateBadge, 1000);
+function resumeTimer(elapsedAtPause) {
+    console.log('Background: trying to resume timer', { elapsedAtPause, pausedTime: timerState.pausedTime });
+    
+    // Try recovery even if not paused when elapsedAtPause is provided
+    if (!timerState.pausedTime && elapsedAtPause === undefined) {
+        console.warn('Not in paused state or no elapsed time provided');
+        return false;
+    }
+    
+    // First make sure we have the correct target time from storage
+    chrome.storage.local.get(['activeTargetMinutes', 'targetMinutes'], (result) => {
+        // Use activeTargetMinutes first, then targetMinutes, then keep current value as last resort
+        if (result.activeTargetMinutes) {
+            timerState.activeTargetMinutes = result.activeTargetMinutes;
+            console.log('Restored activeTargetMinutes from storage:', timerState.activeTargetMinutes);
+        } else if (result.targetMinutes) {
+            timerState.activeTargetMinutes = result.targetMinutes;
+            console.log('Using targetMinutes from storage:', timerState.activeTargetMinutes);
+        }
+        
+        // Calculate correct start time based on elapsed time
+        if (elapsedAtPause !== undefined) {
+            // Use exact elapsed time from popup
+            timerState.elapsedAtPause = elapsedAtPause;
+            timerState.startTime = Date.now() - timerState.elapsedAtPause;
+            console.log('Background: resuming with elapsedAtPause', timerState.elapsedAtPause, timerState.startTime);
+        } else if (timerState.pausedTime && timerState.startTime) {
+            // Calculate new start time by adding paused duration
+            const pausedDuration = Date.now() - timerState.pausedTime;
+            timerState.startTime += pausedDuration;
+            console.log('Background: resuming with pausedDuration', pausedDuration, timerState.startTime);
+        } else {
+            console.error('Missing information required to resume timer');
+            return;
+        }
+        
+        timerState.pausedTime = null;
+        timerState.isRunning = true;
+        
+        saveState();
+        startBadgeInterval();
+    });
+    
+    return true;
 }
 
 function pauseTimer() {
-    if (!timerState.isRunning) return;
+    if (!timerState.isRunning) return false;
 
     if (timerState.startTime) {
-        // 정확한 밀리초 단위 경과 시간 저장 - 정밀도 유지
+        // Store precise elapsed time in milliseconds
         const now = Date.now();
         const elapsedMs = now - timerState.startTime;
         timerState.elapsedAtPause = elapsedMs;
         
-        // 디버깅용 로그 추가
         console.log(`Paused: Elapsed time ${elapsedMs}ms, ${elapsedMs/1000}s`);
     }
 
     timerState.isRunning = false;
     timerState.pausedTime = Date.now();
-    clearInterval(timerState.intervalId);
+    
+    if (timerState.intervalId) {
+        clearInterval(timerState.intervalId);
+        timerState.intervalId = null;
+    }
     
     updateBadge();
     saveState();
+    return true;
 }
 
 function resetTimer(customTargetMinutes) {
     timerState.isRunning = false;
     timerState.startTime = null;
     timerState.pausedTime = null;
+    timerState.elapsedAtPause = 0;
     
     if (customTargetMinutes !== undefined) {
         timerState.activeTargetMinutes = customTargetMinutes;
-        saveState();
     } else {
+        // Get default value from storage
         chrome.storage.local.get(['targetMinutes'], (result) => {
             if (result.targetMinutes) {
                 timerState.activeTargetMinutes = result.targetMinutes;
             } else {
                 timerState.activeTargetMinutes = 30;
             }
-            saveState();
         });
     }
     
-    clearInterval(timerState.intervalId);
+    saveState();
+    
+    if (timerState.intervalId) {
+        clearInterval(timerState.intervalId);
+        timerState.intervalId = null;
+    }
+    
     chrome.action.setBadgeText({ text: "" });
+    return true;
 }
 
 function updateBadge() {
@@ -245,22 +367,25 @@ function updateBadge() {
     const targetSeconds = timerState.activeTargetMinutes * 60;
     
     if (timerState.isRunning) {
-        // 실행 중인 상태에서는 현재 시간 기준으로 계산
+        // Calculate elapsed time from current time when running
         const now = Date.now();
-        // 밀리초 차이를 먼저 계산하고 초 단위로 변환 후 내림 처리
+        // Convert to seconds with floor for consistency
         elapsed = Math.floor((now - timerState.startTime) / 1000);
+        
+        // Log every 10 seconds for debugging
+        if (elapsed % 10 === 0) {
+            console.log(`Running badge: ${elapsed}s elapsed, target: ${targetSeconds}s`);
+        }
     } else if (timerState.pausedTime) {
-        // 일시정지 상태에서는 저장된 경과 시간 사용
+        // Use saved elapsed time when paused
         if (timerState.elapsedAtPause) {
-            // 밀리초를 초로 변환 시 정확하게 내림
             elapsed = Math.floor(timerState.elapsedAtPause / 1000);
-            // 디버깅용 로그
             console.log(`Badge update: Using elapsedAtPause ${timerState.elapsedAtPause}ms, ${elapsed}s`);
         } else {
             elapsed = Math.floor((timerState.pausedTime - timerState.startTime) / 1000);
         }
     } else {
-        // 타이머가 실행 중이지 않고 일시정지 상태도 아님
+        // Clear badge when neither running nor paused
         chrome.action.setBadgeText({ text: "" });
         return;
     }

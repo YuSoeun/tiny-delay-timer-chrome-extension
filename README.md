@@ -3,6 +3,8 @@
 A minimal Chrome extension timer for Baekjoon with delay time tracking.  
 Shows elapsed and overtime directly on the icon badge.
 
+![Mini Promotion](./assets/background_with_logo.png)
+
 ---
 
 ## 🙋‍♂️ Why?
@@ -20,6 +22,8 @@ It's a personal timer, made simple and useful. Hope it helps you too.
 - Highlight **delay time** when exceeding the target
 - Show timer info **directly on the Chrome toolbar icon**
 - Lightweight, no distractions
+
+![Extension Features](./assets/capture2.png)
 
 ---
 
@@ -42,6 +46,24 @@ It's a personal timer, made simple and useful. Hope it helps you too.
    - Track total elapsed time
 
 *Time badge will appear on the extension icon showing progress at a glance*
+
+## 📷 Screenshots
+
+### Main Timer Interface
+![Main Timer](./assets/capture1.png)
+
+### Running Timer
+![Running Timer](./assets/capture2.png)
+
+### Preset Settings
+![Preset Settings](./assets/capture3.png)
+
+### Time Picker
+![Time Picker](./assets/capture4.png)
+
+
+### Badge Display
+![Badge Display](./assets/capture5.png)
 
 ---
 
@@ -86,3 +108,5 @@ This project is licensed under the MIT License.
 
 Developed by [YuSoeun](https://github.com/YuSoeun)  
 Always trying to build something minimal, useful, and user-friendly.
+
+![Background](./assets/background_with_logo.png)

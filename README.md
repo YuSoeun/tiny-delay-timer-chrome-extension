@@ -96,6 +96,12 @@ boj-delay-timer-chrome-extension/
 - [ ] In-page overlay mode (optional)
 
 ---
+
+## 🎨 Design Reference
+
+Interface design inspired by [Pinterest](https://pin.it/Xf7slxE6V).
+
+---
 ## 📄 License
 
 This project is licensed under the MIT License.

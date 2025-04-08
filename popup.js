@@ -397,7 +397,6 @@ function updateTimerState(newState) {
       break;
       
     case TimerState.RUNNING:
-      // In RUNNING state, hide timer display and show running state
       idleState.classList.remove('active');
       runningState.classList.add('active');
       
@@ -406,7 +405,6 @@ function updateTimerState(newState) {
       break;
       
     case TimerState.PAUSED:
-      // In PAUSED state, hide timer display and show running state
       idleState.classList.remove('active');
       runningState.classList.add('active');
       
@@ -429,19 +427,35 @@ function handleStart() {
     if (timerState.pausedTime !== null) {
         console.log('Resuming from paused state');
         
-        const pausedDuration = Date.now() - timerState.pausedTime;
-        timerState.startTime += pausedDuration;
+        timerState.elapsedAtPause = timerState.elapsedAtPause || 0;
+        timerState.startTime = Date.now() - timerState.elapsedAtPause;
         timerState.pausedTime = null;
         timerState.isRunning = true;
 
         updateTimerState(TimerState.RUNNING);
         
+        // Send resume request to background script
         chrome.runtime.sendMessage({
             action: 'resumeTimer',
-            pausedDuration: pausedDuration
+            elapsedAtPause: timerState.elapsedAtPause
+        }, function(response) {
+            if (!response || !response.success) {
+                console.error('Failed to resume timer in background, retrying');
+                // Retry if initial attempt fails
+                setTimeout(function() {
+                    verifyTimerWithBackground();
+                }, 500);
+            } else {
+                console.log('Timer resumed successfully');
+            }
         });
         
+        // Restart UI update interval
+        clearInterval(timerState.elapsedInterval);
         startStatusUpdateInterval();
+        
+        // Verify badge update is working after a delay
+        setTimeout(verifyTimerWithBackground, 3000);
         return;
     }
 
@@ -455,8 +469,13 @@ function handleStart() {
     timerState.isRunning = true;
     timerState.startTime = Date.now();
     timerState.pausedTime = null;
+    timerState.elapsedAtPause = 0;
 
-    chrome.storage.local.set({ targetMinutes: targetMinutesExact });
+    // Save both target time values to prevent reset to default
+    chrome.storage.local.set({ 
+        targetMinutes: targetMinutesExact,
+        activeTargetMinutes: targetMinutesExact
+    });
 
     const container = document.querySelector('.container');
     if (container) container.classList.add('running');
@@ -471,6 +490,14 @@ function handleStart() {
         action: 'startTimer',
         targetMinutes: targetMinutesExact,
         totalSeconds: totalSeconds
+    }, function(response) {
+        if (!response || !response.success) {
+            console.error('Failed to start timer in background, retrying');
+            // Retry if initial attempt fails
+            setTimeout(function() {
+                verifyTimerWithBackground();
+            }, 500);
+        }
     });
 
     updateTimerState(TimerState.RUNNING);
@@ -489,15 +516,36 @@ function handlePause() {
         return;
     }
     
+    const elapsedMs = Date.now() - timerState.startTime;
+    timerState.elapsedAtPause = elapsedMs;
+    
     timerState.isRunning = false;
     timerState.pausedTime = Date.now();
     
-    chrome.runtime.sendMessage({ action: 'pauseTimer' });
+    chrome.runtime.sendMessage({ 
+        action: 'pauseTimer',
+        elapsedAtPause: elapsedMs
+    });
+    
+    // Save complete timer state to ensure it's properly restored later
+    chrome.storage.local.set({
+        timerStatus: 'paused',
+        pausedTime: timerState.pausedTime,
+        startTime: timerState.startTime,
+        elapsedAtPause: elapsedMs,
+        activeTargetMinutes: timerState.activeTargetMinutes,
+        // Save targetMinutes too as a backup
+        targetMinutes: timerState.activeTargetMinutes
+    });
+    
+    const targetSeconds = timerState.activeTargetMinutes * 60;
+    const elapsed = Math.floor(elapsedMs / 1000);
+    const remaining = Math.max(targetSeconds - elapsed, 0);
+    const delay = Math.max(elapsed - targetSeconds, 0);
+    updateUIFromStatus(remaining, delay, targetSeconds);
     
     updateTimerState(TimerState.PAUSED);
     clearInterval(timerState.elapsedInterval);
-    
-    console.log('Timer paused successfully');
 }
 
 function handleReset() {
@@ -593,7 +641,7 @@ function resetUI() {
 }
 
 function initializeTimerState() {
-    chrome.storage.local.get(['targetMinutes'], (storedData) => {
+    chrome.storage.local.get(['targetMinutes', 'timerStatus', 'pausedTime', 'startTime', 'elapsedAtPause', 'activeTargetMinutes'], (storedData) => {
         if (storedData.targetMinutes) {
             timerState.targetMinutes = storedData.targetMinutes;
             timerState.activeTargetMinutes = storedData.targetMinutes;
@@ -611,6 +659,34 @@ function initializeTimerState() {
             }
         }
         
+        if (storedData.timerStatus === 'paused' && storedData.pausedTime) {
+            timerState.isRunning = false;
+            timerState.startTime = storedData.startTime;
+            timerState.pausedTime = storedData.pausedTime;
+            timerState.elapsedAtPause = storedData.elapsedAtPause;
+            timerState.activeTargetMinutes = storedData.activeTargetMinutes || storedData.targetMinutes;
+
+            const targetSeconds = timerState.activeTargetMinutes * 60;
+            
+            let elapsed = 0;
+            if (timerState.elapsedAtPause) {
+                elapsed = Math.floor(timerState.elapsedAtPause / 1000);
+            } else if (timerState.startTime) {
+                elapsed = Math.floor((timerState.pausedTime - timerState.startTime) / 1000);
+            }
+            
+            const remaining = Math.max(targetSeconds - elapsed, 0);
+            const delay = Math.max(elapsed - targetSeconds, 0);
+
+            const container = document.querySelector('.container');
+            if (container) container.classList.add('running');
+
+            updateTimerState(TimerState.PAUSED);
+            updateUIFromStatus(remaining, delay, targetSeconds);
+            
+            return;
+        }
+        
         chrome.runtime.sendMessage({ 
             action: 'getStatus',
             savedTargetMinutes: storedData.targetMinutes
@@ -619,6 +695,10 @@ function initializeTimerState() {
                 timerState.startTime = res.startTime;
                 timerState.isRunning = res.isRunning;
                 timerState.pausedTime = res.pausedTime;
+                
+                if (res.elapsedAtPause) {
+                    timerState.elapsedAtPause = res.elapsedAtPause;
+                }
                 
                 if (!res.isRunning && !res.pausedTime) {
                     timerState.activeTargetMinutes = storedData.targetMinutes || res.activeTargetMinutes;
@@ -645,7 +725,7 @@ function initializeTimerState() {
                 if (timerState.isRunning) {
                     updateTimerState(TimerState.RUNNING);
                     startStatusUpdateInterval();
-                } else if (timerState.pausedTime) {
+                } else if (res.pausedTime) {
                     updateTimerState(TimerState.PAUSED);
                     updateUIFromStatus(res.remaining, res.delay, targetSeconds);
                 } else {
@@ -677,13 +757,26 @@ function startStatusUpdateInterval() {
         if (!timerState.isRunning) return;
 
         const now = Date.now();
-        const elapsed = Math.floor((now - timerState.startTime) / 1000);
+        const elapsedMs = now - timerState.startTime;
+        const elapsed = Math.floor(elapsedMs / 1000);
+        
         const totalSeconds = timerState.activeTargetMinutes * 60;
         const remaining = Math.max(totalSeconds - elapsed, 0);
         const delay = Math.max(elapsed - totalSeconds, 0);
 
         updateUIFromStatus(remaining, delay, totalSeconds);
     }, 1000);
+    
+    if (timerState.isRunning) {
+        const now = Date.now();
+        const elapsedMs = now - timerState.startTime;
+        const elapsed = Math.floor(elapsedMs / 1000);
+        const totalSeconds = timerState.activeTargetMinutes * 60;
+        const remaining = Math.max(totalSeconds - elapsed, 0);
+        const delay = Math.max(elapsed - totalSeconds, 0);
+        
+        updateUIFromStatus(remaining, delay, totalSeconds);
+    }
 }
 
 function updateUIFromStatus(remaining, delay, totalSeconds) {
@@ -715,7 +808,6 @@ function updateUIFromStatus(remaining, delay, totalSeconds) {
       elements.totalElapsed.textContent = formatTime(total);
     }
 
-    // Update progress bar based on remaining time (remaining / totalSeconds)
     const progress = (remaining / totalSeconds) * 100;
     const delayProgress = (delay / totalSeconds) * 100;
     
@@ -732,7 +824,7 @@ function updateUIFromStatus(remaining, delay, totalSeconds) {
 }
 
 function formatTime(seconds) {
-    seconds = Math.ceil(seconds);
+    seconds = Math.ceil(seconds); // Use Math.ceil instead of Math.floor to avoid showing one second less
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
@@ -976,4 +1068,25 @@ function handleTargetTimeChange(e) {
         timerState.targetMinutes = value;
         chrome.storage.local.set({ targetMinutes: value });
     }
+}
+
+function verifyTimerWithBackground() {
+    chrome.runtime.sendMessage({ 
+        action: 'checkBadgeStatus'
+    }, (response) => {
+        if (response) {
+            console.log('Badge status check:', response);
+            
+            if (response.isRunning && !response.hasInterval) {
+                console.log('Timer is running but badge update interval is missing, attempting recovery');
+                
+                if (timerState.elapsedAtPause) {
+                    chrome.runtime.sendMessage({
+                        action: 'resumeTimer',
+                        elapsedAtPause: timerState.elapsedAtPause
+                    });
+                }
+            }
+        }
+    });
 }

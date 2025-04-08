@@ -824,7 +824,7 @@ function updateUIFromStatus(remaining, delay, totalSeconds) {
 }
 
 function formatTime(seconds) {
-    seconds = Math.floor(seconds);
+    seconds = Math.ceil(seconds); // Use Math.ceil instead of Math.floor to avoid showing one second less
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;

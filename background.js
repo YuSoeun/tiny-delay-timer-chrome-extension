@@ -60,8 +60,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             const result = startTimer(message.targetMinutes);
             sendResponse({ success: result });
         } else if (message.action === 'resumeTimer') {
-            const result = resumeTimer(message.elapsedAtPause);
-            sendResponse({ success: result });
+            resumeTimer(message.elapsedAtPause, (result) => {
+                sendResponse({ success: result });
+            });
         } else if (message.action === 'pauseTimer') {
             const result = pauseTimer();
             sendResponse({ success: result });
@@ -261,50 +262,60 @@ function startTimer(targetMinutes) {
     return true;
 }
 
-function resumeTimer(elapsedAtPause) {
+function resumeTimer(elapsedAtPause, callback) {
     console.log('Background: trying to resume timer', { elapsedAtPause, pausedTime: timerState.pausedTime });
     
     // Try recovery even if not paused when elapsedAtPause is provided
     if (!timerState.pausedTime && elapsedAtPause === undefined) {
         console.warn('Not in paused state or no elapsed time provided');
+        if (callback) callback(false);
         return false;
     }
     
     // First make sure we have the correct target time from storage
     chrome.storage.local.get(['activeTargetMinutes', 'targetMinutes'], (result) => {
-        // Use activeTargetMinutes first, then targetMinutes, then keep current value as last resort
-        if (result.activeTargetMinutes) {
-            timerState.activeTargetMinutes = result.activeTargetMinutes;
-            console.log('Restored activeTargetMinutes from storage:', timerState.activeTargetMinutes);
-        } else if (result.targetMinutes) {
-            timerState.activeTargetMinutes = result.targetMinutes;
-            console.log('Using targetMinutes from storage:', timerState.activeTargetMinutes);
+        try {
+            // Use activeTargetMinutes first, then targetMinutes, then keep current value as last resort
+            if (result.activeTargetMinutes) {
+                timerState.activeTargetMinutes = result.activeTargetMinutes;
+                console.log('Restored activeTargetMinutes from storage:', timerState.activeTargetMinutes);
+            } else if (result.targetMinutes) {
+                timerState.activeTargetMinutes = result.targetMinutes;
+                console.log('Using targetMinutes from storage:', timerState.activeTargetMinutes);
+            }
+            
+            // Calculate correct start time based on elapsed time
+            if (elapsedAtPause !== undefined) {
+                // Use exact elapsed time from popup
+                timerState.elapsedAtPause = elapsedAtPause;
+                timerState.startTime = Date.now() - timerState.elapsedAtPause;
+                console.log('Background: resuming with elapsedAtPause', timerState.elapsedAtPause, timerState.startTime);
+            } else if (timerState.pausedTime && timerState.startTime) {
+                // Calculate new start time by adding paused duration
+                const pausedDuration = Date.now() - timerState.pausedTime;
+                timerState.startTime += pausedDuration;
+                console.log('Background: resuming with pausedDuration', pausedDuration, timerState.startTime);
+            } else {
+                console.error('Missing information required to resume timer');
+                if (callback) callback(false);
+                return;
+            }
+            
+            timerState.pausedTime = null;
+            timerState.isRunning = true;
+            
+            saveState();
+            startBadgeInterval();
+            
+            if (callback) callback(true);
+        } catch (error) {
+            console.error('Error resuming timer:', error);
+            if (callback) callback(false);
         }
-        
-        // Calculate correct start time based on elapsed time
-        if (elapsedAtPause !== undefined) {
-            // Use exact elapsed time from popup
-            timerState.elapsedAtPause = elapsedAtPause;
-            timerState.startTime = Date.now() - timerState.elapsedAtPause;
-            console.log('Background: resuming with elapsedAtPause', timerState.elapsedAtPause, timerState.startTime);
-        } else if (timerState.pausedTime && timerState.startTime) {
-            // Calculate new start time by adding paused duration
-            const pausedDuration = Date.now() - timerState.pausedTime;
-            timerState.startTime += pausedDuration;
-            console.log('Background: resuming with pausedDuration', pausedDuration, timerState.startTime);
-        } else {
-            console.error('Missing information required to resume timer');
-            return;
-        }
-        
-        timerState.pausedTime = null;
-        timerState.isRunning = true;
-        
-        saveState();
-        startBadgeInterval();
     });
     
-    return true;
+    // Don't return anything here since the actual result depends on the async operation
+    // The callback will be used instead
 }
 
 function pauseTimer() {

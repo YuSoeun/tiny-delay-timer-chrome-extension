@@ -1,9 +1,9 @@
+![Mini Promotion](./assets/background_with_logo.png)
+
 # Tiny Delay Timer – Chrome Extension
 
 A minimal Chrome extension timer for Baekjoon with delay time tracking.  
 Shows elapsed and overtime directly on the icon badge.
-
-![Mini Promotion](./assets/background_with_logo.png)
 
 ---
 
@@ -109,4 +109,4 @@ This project is licensed under the MIT License.
 Developed by [YuSoeun](https://github.com/YuSoeun)  
 Always trying to build something minimal, useful, and user-friendly.
 
-![Background](./assets/background_with_logo.png)
+![Background](./assets/background.png)

@@ -29,7 +29,7 @@ It's a personal timer, made simple and useful. Hope it helps you too.
 
 ## 🚀 Getting Started
 
-1. **Download the extension** (coming soon via Chrome Web Store)
+1. **Download the extension** from the [Chrome Web Store](https://chromewebstore.google.com/detail/tiny-delay-timer/kngnojoglfamijphdoohcikoncebebdj)
 
 2. After installing, click the timer icon on your Chrome toolbar
 

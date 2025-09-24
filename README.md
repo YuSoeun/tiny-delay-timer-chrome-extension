@@ -21,6 +21,8 @@ It's a personal timer, made simple and useful. Hope it helps you too.
 - Track **elapsed time** in real-time
 - Highlight **delay time** when exceeding the target
 - Show timer info **directly on the Chrome toolbar icon**
+- **Timer completion notifications** with visual and audio alerts
+- **Customizable notification settings** (enable/disable)
 - Lightweight, no distractions
 
 ![Extension Features](./assets/capture2.png)
@@ -44,8 +46,20 @@ It's a personal timer, made simple and useful. Hope it helps you too.
    - Show remaining time while solving
    - Display delay time in red if you exceed your target
    - Track total elapsed time
+   - ** Notify you when the timer is complete** with browser notifications
+   - ** Show visual alerts** with icon flashing and popup modal
+   - ** Play completion sound** (if browser supports Web Audio API)
 
 *Time badge will appear on the extension icon showing progress at a glance*
+
+### 🔔 Notification Features
+
+- **Browser Notifications**: Get system notifications when your timer completes
+- **Visual Alerts**: Extension icon flashes and shows completion badge
+- **Popup Modal**: Beautiful completion modal with options to dismiss or restart
+- **Audio Feedback**: Pleasant chime sound when timer finishes
+- **Settings Control**: Enable/disable notifications in the extension settings
+- **Non-intrusive**: Notifications auto-dismiss and don't interrupt your workflow
 
 ## 📷 Screenshots
 
@@ -61,7 +75,6 @@ It's a personal timer, made simple and useful. Hope it helps you too.
 ### Time Picker
 ![Time Picker](./assets/capture4.png)
 
-
 ### Badge Display
 ![Badge Display](./assets/capture5.png)
 
@@ -71,11 +84,11 @@ It's a personal timer, made simple and useful. Hope it helps you too.
 
 ```plaintext
 boj-delay-timer-chrome-extension/
-├── manifest.json         # Chrome extension config (Manifest V3)
-├── background.js         # Core timer & badge update logic
-├── popup.html            # Main popup UI with timer controls
-├── popup.js              # Timer logic and UI interactions
-├── styles.css            # Main stylesheet
+├── manifest.json         # Chrome extension config (Manifest V3) + notifications permission
+├── background.js         # Core timer, notifications & badge update logic
+├── popup.html            # Main popup UI with timer controls + completion modal
+├── popup.js              # Timer logic, notifications & UI interactions
+├── styles.css            # Main stylesheet + notification modal styles
 ├── styles/               # Additional CSS files
 │   ├── layout.css        # Layout styling
 │   ├── preset-modal.css  # Preset editor modal styling
@@ -93,7 +106,13 @@ boj-delay-timer-chrome-extension/
 - [x] Add popup interface for target time input
 - [x] Customizable timer formats (e.g., mm:ss)
 - [x] Option to disable badge display
+- [x] Timer completion notifications
+- [x] Visual and audio alerts
+- [x] Notification settings control
+- [x] Non-intrusive user experience
 - [ ] In-page overlay mode (optional)
+- [ ] Custom notification sounds
+- [ ] Notification repeat intervals
 
 ---
 

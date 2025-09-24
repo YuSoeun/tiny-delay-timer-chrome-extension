@@ -1137,8 +1137,11 @@ function updateCompletionMessage() {
     const messageElement = document.querySelector('.completion-message');
     if (!messageElement) return;
 
-    // Calculate current delay from timer state
-    const elapsed = timerState.elapsedTime || 0;
+    // Calculate current delay from timer state (real-time)
+    if (!timerState.startTime) return;
+
+    const now = Date.now();
+    const elapsed = Math.floor((now - timerState.startTime) / 1000);
     const targetSeconds = (timerState.targetMinutes || timerState.activeTargetMinutes || 30) * 60;
     const delay = Math.max(elapsed - targetSeconds, 0);
 

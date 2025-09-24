@@ -1135,6 +1135,13 @@ function hideCompletionNotificationModal() {
     if (background && modal) {
         background.classList.remove('show');
         modal.classList.remove('show');
+
+        // Tell background script to stop repeat notifications
+        try {
+            chrome.runtime.sendMessage({ action: 'dismissNotifications' });
+        } catch (error) {
+            console.error('Failed to dismiss notifications:', error);
+        }
     }
 }
 
@@ -1279,8 +1286,8 @@ function showNotificationSettingFeedback(isEnabled) {
     if (settingDescription) {
         const originalText = settingDescription.textContent;
         const feedbackText = isEnabled ?
-            '✅ 알림이 활성화되었습니다.' :
-            '🔕 알림이 비활성화되었습니다.';
+            '✅ Notifications enabled.' :
+            '🔕 Notifications disabled.';
 
         settingDescription.textContent = feedbackText;
         settingDescription.style.color = isEnabled ? 'var(--success-color)' : 'var(--text-secondary)';
@@ -1319,7 +1326,7 @@ function flashPageTitle() {
         }
 
         document.title = flashCount % 2 === 0 ?
-            '⏰ 타이머 완료!' :
+            '⏰ Timer Complete!' :
             '🔔 Time\'s Up!';
 
         flashCount++;

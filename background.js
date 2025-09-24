@@ -43,12 +43,41 @@ const timerState = {
     intervalId: null,
     elapsedAtPause: 0,
     hasTriggeredCompletion: false,
-    notificationsEnabled: true
+    notificationsEnabled: true,
+    repeatNotificationInterval: null,
+    notificationCount: 0
 };
 
 // Load saved state
 chrome.runtime.onStartup.addListener(loadState);
 chrome.runtime.onInstalled.addListener(loadState);
+
+// Handle notification clicks
+chrome.notifications.onClicked.addListener((notificationId) => {
+    console.log('Notification clicked:', notificationId);
+
+    // Stop repeat notifications when user clicks
+    if (notificationId.startsWith('timer-complete')) {
+        stopRepeatNotifications();
+
+        // Clear the notification
+        chrome.notifications.clear(notificationId);
+
+        // Optionally open the popup
+        chrome.action.openPopup().catch(() => {
+            // If popup can't be opened, just log it
+            console.log('Could not open popup after notification click');
+        });
+    }
+});
+
+// Handle notification close
+chrome.notifications.onClosed.addListener((notificationId, byUser) => {
+    if (byUser && notificationId.startsWith('timer-complete')) {
+        // User manually closed the notification, stop repeating
+        stopRepeatNotifications();
+    }
+});
 
 // Message handler for timer actions
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -97,6 +126,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({ success: true });
         } else if (message.action === 'getNotificationStatus') {
             sendResponse({ enabled: timerState.notificationsEnabled });
+        } else if (message.action === 'dismissNotifications') {
+            stopRepeatNotifications();
+            sendResponse({ success: true });
         } else {
             sendResponse({ success: false, error: "Unknown action" });
         }
@@ -261,6 +293,7 @@ function startTimer(targetMinutes) {
     } else {
         // Start new timer
         timerState.hasTriggeredCompletion = false; // Reset completion flag for new timer
+        stopRepeatNotifications(); // Stop any ongoing repeat notifications
         if (targetMinutes !== null && targetMinutes !== undefined) {
             timerState.activeTargetMinutes = targetMinutes;
         } else {
@@ -369,6 +402,8 @@ function resetTimer(customTargetMinutes) {
     timerState.startTime = null;
     timerState.pausedTime = null;
     timerState.elapsedAtPause = 0;
+    timerState.hasTriggeredCompletion = false; // Reset completion flag
+    stopRepeatNotifications(); // Stop any ongoing repeat notifications
     
     if (customTargetMinutes !== undefined) {
         timerState.activeTargetMinutes = customTargetMinutes;
@@ -398,33 +433,81 @@ function resetTimer(customTargetMinutes) {
 function showCompletionNotification() {
     if (!timerState.notificationsEnabled) return;
 
+    // Reset notification count and start repeat notifications
+    timerState.notificationCount = 0;
+
+    // Show initial notification
+    showSingleNotification();
+
+    // Start repeat notification system
+    startRepeatNotifications();
+
     // Start visual attention effects
     startIconFlashing();
+}
 
-    // Try browser notification first (least intrusive)
-    try {
-        chrome.notifications.create('timer-complete', {
-            type: 'basic',
-            iconUrl: 'icons/icon128.png',
-            title: '⏰ Tiny Delay Timer',
-            message: '타이머가 완료되었습니다!',
-            priority: 2,
-            requireInteraction: false
-        }, (notificationId) => {
-            if (chrome.runtime.lastError) {
-                console.warn('Browser notification failed, using alternative method:', chrome.runtime.lastError);
-                // Try focused popup as secondary option
-                showFocusedNotification();
-            } else {
-                console.log('Timer completion notification shown:', notificationId);
-                // Still show a subtle visual indicator
-                showSubtleCompletion();
-            }
-        });
-    } catch (error) {
-        console.error('Failed to show notification:', error);
-        showFocusedNotification();
+function showSingleNotification() {
+    timerState.notificationCount++;
+
+    // Clear previous notification first
+    chrome.notifications.clear('timer-complete', () => {
+        // Create new notification
+        try {
+            const notificationId = `timer-complete-${Date.now()}`;
+            chrome.notifications.create(notificationId, {
+                type: 'basic',
+                iconUrl: 'icons/icon128.png',
+                title: '⏰ Tiny Delay Timer',
+                message: `Timer completed! Time's up! ${timerState.notificationCount > 1 ? `(${timerState.notificationCount})` : ''}`,
+                priority: 2,
+                requireInteraction: false
+            }, (createdNotificationId) => {
+                if (chrome.runtime.lastError) {
+                    console.warn('Browser notification failed, using alternative method:', chrome.runtime.lastError);
+                    // Try focused popup as secondary option
+                    showFocusedNotification();
+                } else {
+                    console.log('Timer completion notification shown:', createdNotificationId);
+                    // Still show a subtle visual indicator
+                    showSubtleCompletion();
+                }
+            });
+        } catch (error) {
+            console.error('Failed to show notification:', error);
+            showFocusedNotification();
+        }
+    });
+}
+
+function startRepeatNotifications() {
+    // Clear any existing repeat interval
+    if (timerState.repeatNotificationInterval) {
+        clearInterval(timerState.repeatNotificationInterval);
     }
+
+    // Start repeat notifications every 30 seconds, up to 10 times
+    timerState.repeatNotificationInterval = setInterval(() => {
+        if (timerState.notificationCount >= 10) {
+            // Stop repeating after 10 notifications (5 minutes total)
+            stopRepeatNotifications();
+            return;
+        }
+
+        // Only repeat if notifications are still enabled and timer is still in completed state
+        if (timerState.notificationsEnabled && timerState.hasTriggeredCompletion) {
+            showSingleNotification();
+        } else {
+            stopRepeatNotifications();
+        }
+    }, 30000); // 30 seconds interval
+}
+
+function stopRepeatNotifications() {
+    if (timerState.repeatNotificationInterval) {
+        clearInterval(timerState.repeatNotificationInterval);
+        timerState.repeatNotificationInterval = null;
+    }
+    timerState.notificationCount = 0;
 }
 
 function showFocusedNotification() {

@@ -54,7 +54,7 @@ body::after {
 }
 
 .container {
-  width: 296px;
+  width: 320px;
   height: auto;
   max-height: 210px;
   padding: 12px 12px 0;

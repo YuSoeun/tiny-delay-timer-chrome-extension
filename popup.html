@@ -12,9 +12,23 @@
 </head>
 <body>
   <div class="container">
+    <!-- Timer Completion Notification Modal -->
+    <div id="completionNotificationBackground" class="completion-modal-background"></div>
+    <div id="completionNotificationModal" class="completion-notification-modal">
+      <div class="completion-modal-content">
+        <div class="completion-icon">⏰</div>
+        <h2 class="completion-title">Timer Complete!</h2>
+        <p class="completion-message">Your Time's up! Great work on staying focused.</p>
+        <div class="completion-buttons">
+          <button id="dismissNotification" class="btn-primary completion-btn">Got it</button>
+          <button id="resetTimerFromNotification" class="btn-secondary completion-btn">Restart</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Time Picker Background -->
     <div id="timePickerBackground" class="modal-background"></div>
-    
+
     <!-- Time Picker Modal -->
     <div id="timePickerModal" class="time-picker-modal">
       <div class="modal-header">
@@ -99,9 +113,14 @@
           <button class="preset-btn" data-time="41">00:41:00</button>
           <button class="preset-btn" data-time="60">01:00:00</button>
         </div>
-        <button class="settings-btn" title="Edit time presets">
-          <i class="bi bi-gear"></i>
-        </button>
+        <div class="header-buttons">
+          <button id="notificationToggleBtn" class="notification-btn" title="Toggle notifications">
+            <i class="bi bi-bell-fill"></i>
+          </button>
+          <button class="settings-btn" title="Edit time presets">
+            <i class="bi bi-gear"></i>
+          </button>
+        </div>
       </div>
     </div>
     

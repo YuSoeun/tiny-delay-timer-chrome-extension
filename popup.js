@@ -69,6 +69,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.body.classList.add('state-idle');
 
+    // Check if popup was opened due to timer completion
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('completed') === 'true') {
+      showCompletionNotificationModal();
+    }
+
     const settingsBtn = document.querySelector('.settings-btn');
     if (settingsBtn) {
       settingsBtn.addEventListener('click', function() {
@@ -78,6 +84,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 100);
       });
     }
+
+    // Setup notification toggle button
+    setupNotificationToggle();
     
     window.addEventListener('presetsUpdated', (event) => {
       if (event.detail && Array.isArray(event.detail)) {
@@ -1089,4 +1098,325 @@ function verifyTimerWithBackground() {
             }
         }
     });
+}
+
+// Timer Completion Notification Functions
+function showCompletionNotificationModal() {
+    const background = document.getElementById('completionNotificationBackground');
+    const modal = document.getElementById('completionNotificationModal');
+
+    if (background && modal) {
+        // Update completion message based on current state
+        updateCompletionMessage();
+
+        background.classList.add('show');
+        modal.classList.add('show');
+
+        // Setup event listeners for buttons
+        setupCompletionModalEventListeners();
+
+        // Auto-dismiss after 15 seconds if not interacted with (non-intrusive)
+        setTimeout(() => {
+            if (modal.classList.contains('show')) {
+                hideCompletionNotificationModal();
+            }
+        }, 15000);
+
+        // Play sound effect (if available)
+        playCompletionSound();
+
+        // Add shake effect to grab attention
+        addShakeEffect();
+
+        // Flash the page title
+        flashPageTitle();
+    }
+}
+
+function updateCompletionMessage() {
+    const messageElement = document.querySelector('.completion-message');
+    if (!messageElement) return;
+
+    // Calculate current delay from timer state (real-time)
+    if (!timerState.startTime) return;
+
+    const now = Date.now();
+    const elapsed = Math.floor((now - timerState.startTime) / 1000);
+    const targetSeconds = (timerState.targetMinutes || timerState.activeTargetMinutes || 30) * 60;
+    const delay = Math.max(elapsed - targetSeconds, 0);
+
+    let message;
+    if (delay < 10) {
+        // Timer completed on time (within 10 seconds tolerance)
+        message = "Time's up! You've worked hard :)";
+    } else {
+        // Timer is delayed - show delay in 10-second units
+        const delayIn10s = Math.floor(delay / 10) * 10;
+        const targetMinutes = timerState.targetMinutes || timerState.activeTargetMinutes || 30;
+
+        let delayText;
+        if (delayIn10s < 60) {
+            delayText = `${delayIn10s} sec`;
+        } else {
+            const minutes = Math.floor(delayIn10s / 60);
+            const seconds = delayIn10s % 60;
+            if (seconds === 0) {
+                delayText = `${minutes} min`;
+            } else {
+                delayText = `${minutes} min ${seconds} sec`;
+            }
+        }
+
+        let targetText;
+        if (targetMinutes < 1) {
+            targetText = `${Math.round(targetMinutes * 60)} sec`;
+        } else if (targetMinutes === Math.floor(targetMinutes)) {
+            targetText = `${Math.floor(targetMinutes)} min`;
+        } else {
+            const mins = Math.floor(targetMinutes);
+            const secs = Math.round((targetMinutes - mins) * 60);
+            targetText = secs === 0 ? `${mins} min` : `${mins} min ${secs} sec`;
+        }
+
+        message = `${delayText} late (Target was ${targetText})`;
+    }
+
+    messageElement.textContent = message;
+}
+
+function hideCompletionNotificationModal() {
+    const background = document.getElementById('completionNotificationBackground');
+    const modal = document.getElementById('completionNotificationModal');
+
+    if (background && modal) {
+        background.classList.remove('show');
+        modal.classList.remove('show');
+
+        // Tell background script to stop repeat notifications
+        try {
+            chrome.runtime.sendMessage({ action: 'dismissNotifications' });
+        } catch (error) {
+            console.error('Failed to dismiss notifications:', error);
+        }
+    }
+}
+
+function setupCompletionModalEventListeners() {
+    const dismissBtn = document.getElementById('dismissNotification');
+    const resetBtn = document.getElementById('resetTimerFromNotification');
+
+    if (dismissBtn) {
+        dismissBtn.addEventListener('click', () => {
+            hideCompletionNotificationModal();
+        });
+    }
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', async () => {
+            hideCompletionNotificationModal();
+            // Reset and start timer again with the same target time
+            const targetMinutes = timerState.targetMinutes || timerState.activeTargetMinutes;
+            if (targetMinutes) {
+                try {
+                    await chrome.runtime.sendMessage({
+                        action: 'resetTimer',
+                        targetMinutes: targetMinutes
+                    });
+
+                    // Start the timer immediately
+                    await chrome.runtime.sendMessage({
+                        action: 'startTimer',
+                        targetMinutes: targetMinutes
+                    });
+
+                    // Update UI state
+                    updateTimerState(TimerState.RUNNING);
+                } catch (error) {
+                    console.error('Failed to restart timer:', error);
+                }
+            }
+        });
+    }
+
+    // Close modal when clicking background
+    const background = document.getElementById('completionNotificationBackground');
+    if (background) {
+        background.addEventListener('click', (e) => {
+            if (e.target === background) {
+                hideCompletionNotificationModal();
+            }
+        });
+    }
+
+    // Close modal with ESC key for better accessibility
+    const handleKeyPress = (e) => {
+        if (e.key === 'Escape') {
+            hideCompletionNotificationModal();
+            document.removeEventListener('keydown', handleKeyPress);
+        }
+    };
+    document.addEventListener('keydown', handleKeyPress);
+}
+
+function playCompletionSound() {
+    // Use Web Audio API to create a simple completion sound
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        // Create a pleasant notification sound (two-tone chime)
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+
+    } catch (error) {
+        console.log('Audio playback not available:', error);
+    }
+}
+
+// Notification Toggle Button Functions
+async function setupNotificationToggle() {
+    const notificationBtn = document.getElementById('notificationToggleBtn');
+
+    if (!notificationBtn) {
+        console.error('Notification toggle button element not found');
+        return;
+    }
+
+    // Load current notification setting and update button appearance
+    await updateNotificationButtonState(notificationBtn);
+
+    // Setup click event listener
+    notificationBtn.addEventListener('click', async () => {
+        try {
+            // Get current state
+            const response = await chrome.runtime.sendMessage({
+                action: 'getNotificationStatus'
+            });
+
+            const currentState = response ? response.enabled : true;
+            const newState = !currentState;
+
+            // Update setting
+            const updateResponse = await chrome.runtime.sendMessage({
+                action: 'setNotificationEnabled',
+                enabled: newState
+            });
+
+            if (updateResponse && updateResponse.success) {
+                console.log('Notification setting toggled:', newState);
+                await updateNotificationButtonState(notificationBtn);
+                showNotificationFeedback(newState);
+            } else {
+                console.error('Failed to save notification setting');
+            }
+        } catch (error) {
+            console.error('Error updating notification setting:', error);
+        }
+    });
+}
+
+async function updateNotificationButtonState(button) {
+    try {
+        const response = await chrome.runtime.sendMessage({
+            action: 'getNotificationStatus'
+        });
+
+        const isEnabled = response ? response.enabled : true;
+        const icon = button.querySelector('i');
+
+        if (isEnabled) {
+            button.classList.add('enabled');
+            button.title = 'Notifications enabled - Click to disable';
+            icon.className = 'bi bi-bell-fill';
+        } else {
+            button.classList.remove('enabled');
+            button.title = 'Notifications disabled - Click to enable';
+            icon.className = 'bi bi-bell-slash';
+        }
+    } catch (error) {
+        console.error('Failed to load notification settings:', error);
+    }
+}
+
+function showNotificationFeedback(isEnabled) {
+    // Create a temporary feedback element
+    const feedback = document.createElement('div');
+    feedback.className = `notification-feedback ${isEnabled ? 'enabled' : 'disabled'}`;
+
+    feedback.textContent = isEnabled ?
+        '🔔 Notifications enabled' :
+        '🔕 Notifications disabled';
+
+    document.body.appendChild(feedback);
+
+    // Remove after 2 seconds
+    setTimeout(() => {
+        if (feedback.parentNode) {
+            feedback.classList.add('fade-out');
+            setTimeout(() => {
+                if (feedback.parentNode) {
+                    feedback.parentNode.removeChild(feedback);
+                }
+            }, 300);
+        }
+    }, 2000);
+}
+
+// Additional visual attention effects
+function addShakeEffect() {
+    const modal = document.getElementById('completionNotificationModal');
+    if (modal) {
+        modal.classList.add('shake-effect');
+    }
+}
+
+let originalTitle = '';
+let titleFlashInterval = null;
+
+function flashPageTitle() {
+    if (titleFlashInterval) return; // Already flashing
+
+    originalTitle = document.title;
+    let flashCount = 0;
+    const maxFlashes = 6;
+
+    titleFlashInterval = setInterval(() => {
+        if (flashCount >= maxFlashes) {
+            document.title = originalTitle;
+            clearInterval(titleFlashInterval);
+            titleFlashInterval = null;
+            return;
+        }
+
+        document.title = flashCount % 2 === 0 ?
+            '⏰ Timer Complete!' :
+            '🔔 Time\'s Up!';
+
+        flashCount++;
+    }, 800);
+}
+
+function createVisualPulse() {
+    // Create a full-screen pulse overlay for extra attention
+    const pulseOverlay = document.createElement('div');
+    pulseOverlay.className = 'visual-pulse-overlay';
+
+    document.body.appendChild(pulseOverlay);
+
+    // Remove after animation
+    setTimeout(() => {
+        if (pulseOverlay.parentNode) {
+            pulseOverlay.parentNode.removeChild(pulseOverlay);
+        }
+    }, 1500);
 }

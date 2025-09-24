@@ -41,12 +41,43 @@ const timerState = {
     pausedTime: null,
     activeTargetMinutes: 30,
     intervalId: null,
-    elapsedAtPause: 0
+    elapsedAtPause: 0,
+    hasTriggeredCompletion: false,
+    notificationsEnabled: true,
+    repeatNotificationInterval: null,
+    notificationCount: 0
 };
 
 // Load saved state
 chrome.runtime.onStartup.addListener(loadState);
 chrome.runtime.onInstalled.addListener(loadState);
+
+// Handle notification clicks
+chrome.notifications.onClicked.addListener((notificationId) => {
+    console.log('Notification clicked:', notificationId);
+
+    // Stop repeat notifications when user clicks
+    if (notificationId.startsWith('timer-complete')) {
+        stopRepeatNotifications();
+
+        // Clear the notification
+        chrome.notifications.clear(notificationId);
+
+        // Optionally open the popup
+        chrome.action.openPopup().catch(() => {
+            // If popup can't be opened, just log it
+            console.log('Could not open popup after notification click');
+        });
+    }
+});
+
+// Handle notification close
+chrome.notifications.onClosed.addListener((notificationId, byUser) => {
+    if (byUser && notificationId.startsWith('timer-complete')) {
+        // User manually closed the notification, stop repeating
+        stopRepeatNotifications();
+    }
+});
 
 // Message handler for timer actions
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -89,6 +120,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         } else if (message.action === 'getCssVariables') {
             // Simple responses should be sent immediately
             sendResponse({ primaryColor, dangerColor });
+        } else if (message.action === 'setNotificationEnabled') {
+            timerState.notificationsEnabled = message.enabled;
+            chrome.storage.local.set({ notificationsEnabled: message.enabled });
+            sendResponse({ success: true });
+        } else if (message.action === 'getNotificationStatus') {
+            sendResponse({ enabled: timerState.notificationsEnabled });
+        } else if (message.action === 'dismissNotifications') {
+            stopRepeatNotifications();
+            sendResponse({ success: true });
         } else {
             sendResponse({ success: false, error: "Unknown action" });
         }
@@ -145,7 +185,9 @@ async function loadState() {
             'activeTargetMinutes',
             'elapsedAtPause',
             'timerStatus',  // Explicit timer state flag
-            'targetMinutes' // Default target time
+            'targetMinutes', // Default target time
+            'notificationsEnabled',
+            'hasTriggeredCompletion'
         ]);
 
         console.log('Loaded state:', state);
@@ -157,6 +199,22 @@ async function loadState() {
 
         if (state.elapsedAtPause) {
             timerState.elapsedAtPause = state.elapsedAtPause;
+        }
+
+        // Load notification settings
+        if (state.notificationsEnabled !== undefined) {
+            timerState.notificationsEnabled = state.notificationsEnabled;
+        }
+
+        // Load completion state
+        if (state.hasTriggeredCompletion !== undefined) {
+            timerState.hasTriggeredCompletion = state.hasTriggeredCompletion;
+
+            // If timer was already completed, restart repeat notifications
+            if (state.hasTriggeredCompletion && state.isRunning && state.startTime) {
+                console.log('Timer was completed before restart - restarting repeat notifications');
+                startRepeatNotifications();
+            }
         }
 
         // Restore explicit saved state if available
@@ -240,6 +298,8 @@ function startTimer(targetMinutes) {
         console.log('Resuming from paused state, new startTime:', timerState.startTime);
     } else {
         // Start new timer
+        timerState.hasTriggeredCompletion = false; // Reset completion flag for new timer
+        stopRepeatNotifications(); // Stop any ongoing repeat notifications
         if (targetMinutes !== null && targetMinutes !== undefined) {
             timerState.activeTargetMinutes = targetMinutes;
         } else {
@@ -348,6 +408,8 @@ function resetTimer(customTargetMinutes) {
     timerState.startTime = null;
     timerState.pausedTime = null;
     timerState.elapsedAtPause = 0;
+    timerState.hasTriggeredCompletion = false; // Reset completion flag
+    stopRepeatNotifications(); // Stop any ongoing repeat notifications
     
     if (customTargetMinutes !== undefined) {
         timerState.activeTargetMinutes = customTargetMinutes;
@@ -371,6 +433,259 @@ function resetTimer(customTargetMinutes) {
     
     chrome.action.setBadgeText({ text: "" });
     return true;
+}
+
+// Timer completion notification functions
+function showCompletionNotification() {
+    if (!timerState.notificationsEnabled) return;
+
+    // Reset notification count and start repeat notifications
+    timerState.notificationCount = 0;
+
+    // Show initial notification
+    showSingleNotification();
+
+    // Start repeat notification system
+    startRepeatNotifications();
+
+    // Skip icon flashing to avoid CSP issues - just show badge notification
+    console.log('Timer completion notification sent');
+}
+
+function showSingleNotification() {
+    timerState.notificationCount++;
+
+    // Calculate current delay
+    const now = Date.now();
+    const elapsed = Math.floor((now - timerState.startTime) / 1000);
+    const targetSeconds = timerState.activeTargetMinutes * 60;
+    const delay = Math.max(elapsed - targetSeconds, 0);
+
+    let message;
+    if (delay < 10) {
+        // Timer completed on time (within 10 seconds tolerance)
+        message = "Time's up! You've worked hard :)";
+    } else {
+        // Timer is delayed - show delay in 10-second units
+        const delayIn10s = Math.floor(delay / 10) * 10;
+        const targetMinutes = timerState.activeTargetMinutes;
+
+        let delayText;
+        if (delayIn10s < 60) {
+            delayText = `${delayIn10s} sec`;
+        } else {
+            const minutes = Math.floor(delayIn10s / 60);
+            const seconds = delayIn10s % 60;
+            if (seconds === 0) {
+                delayText = `${minutes} min`;
+            } else {
+                delayText = `${minutes} min ${seconds} sec`;
+            }
+        }
+
+        let targetText;
+        if (targetMinutes < 1) {
+            targetText = `${Math.round(targetMinutes * 60)} sec`;
+        } else if (targetMinutes === Math.floor(targetMinutes)) {
+            targetText = `${Math.floor(targetMinutes)} min`;
+        } else {
+            const mins = Math.floor(targetMinutes);
+            const secs = Math.round((targetMinutes - mins) * 60);
+            targetText = secs === 0 ? `${mins} min` : `${mins} min ${secs} sec`;
+        }
+
+        message = `${delayText} late (Target was ${targetText})`;
+    }
+
+    // Don't show repeat count indicator
+
+    // Clear previous notification first
+    chrome.notifications.clear('timer-complete', () => {
+        // Create new notification
+        try {
+            const notificationId = `timer-complete-${Date.now()}`;
+            chrome.notifications.create(notificationId, {
+                type: 'basic',
+                iconUrl: 'icons/icon128.png',
+                title: '⏰ Tiny Delay Timer',
+                message: message,
+                priority: 2,
+                requireInteraction: false
+            }, (createdNotificationId) => {
+                if (chrome.runtime.lastError) {
+                    console.warn('Browser notification failed, using alternative method:', chrome.runtime.lastError);
+                    // Try focused popup as secondary option
+                    showFocusedNotification();
+                } else {
+                    console.log('Timer completion notification shown:', createdNotificationId);
+                    // Still show a subtle visual indicator
+                    showSubtleCompletion();
+                }
+            });
+        } catch (error) {
+            console.error('Failed to show notification:', error);
+            showFocusedNotification();
+        }
+    });
+}
+
+function startRepeatNotifications() {
+    // Clear any existing repeat interval
+    if (timerState.repeatNotificationInterval) {
+        clearInterval(timerState.repeatNotificationInterval);
+    }
+
+    // Start repeat notifications every 10 minutes, up to 6 times
+    timerState.repeatNotificationInterval = setInterval(() => {
+        console.log(`Repeat notification check: count=${timerState.notificationCount}, enabled=${timerState.notificationsEnabled}, completed=${timerState.hasTriggeredCompletion}`);
+
+        if (timerState.notificationCount >= 6) {
+            // Stop repeating after 6 notifications (60 minutes total)
+            console.log('Stopping repeat notifications - maximum count reached');
+            stopRepeatNotifications();
+            return;
+        }
+
+        // Only repeat if notifications are still enabled and timer has completed
+        if (timerState.notificationsEnabled && timerState.hasTriggeredCompletion && timerState.startTime) {
+            console.log('Sending repeat notification...');
+            showSingleNotification();
+        } else {
+            console.log('Stopping repeat notifications - conditions not met:', {
+                enabled: timerState.notificationsEnabled,
+                completed: timerState.hasTriggeredCompletion,
+                hasStartTime: !!timerState.startTime
+            });
+            stopRepeatNotifications();
+        }
+    }, 600000); // 10 minutes interval (600,000ms)
+}
+
+function stopRepeatNotifications() {
+    if (timerState.repeatNotificationInterval) {
+        clearInterval(timerState.repeatNotificationInterval);
+        timerState.repeatNotificationInterval = null;
+    }
+    // Don't reset notification count here - let it accumulate for proper tracking
+}
+
+function showFocusedNotification() {
+    // Only show popup if user is actively using the extension
+    chrome.action.setPopup({
+        popup: 'popup.html?completed=true'
+    }, () => {
+        // Briefly highlight the extension icon
+        setTimeout(() => {
+            chrome.action.setPopup({ popup: 'popup.html' });
+        }, 5000);
+    });
+}
+
+function showSubtleCompletion() {
+    // Just update the badge to indicate completion without opening anything
+    try {
+        chrome.action.setBadgeText({ text: "✓" });
+        chrome.action.setBadgeBackgroundColor({ color: "#4CAF50" });
+
+        // Reset badge after 10 seconds
+        setTimeout(() => {
+            updateBadge();
+        }, 10000);
+    } catch (error) {
+        console.error('Failed to show subtle completion indicator:', error);
+    }
+}
+
+function showCompletionPopup() {
+    try {
+        chrome.windows.create({
+            url: chrome.runtime.getURL('popup.html') + '?completed=true',
+            type: 'popup',
+            width: 400,
+            height: 300,
+            focused: true,
+            top: 100,
+            left: 100
+        }, (window) => {
+            if (chrome.runtime.lastError) {
+                console.error('Popup creation failed:', chrome.runtime.lastError);
+            } else {
+                console.log('Timer completion popup shown:', window.id);
+                // Auto-close after 10 seconds
+                setTimeout(() => {
+                    try {
+                        chrome.windows.remove(window.id);
+                    } catch (e) {
+                        console.log('Popup already closed or removed');
+                    }
+                }, 10000);
+            }
+        });
+    } catch (error) {
+        console.error('Failed to show completion popup:', error);
+    }
+}
+
+// Visual attention effects for timer completion
+let flashingInterval = null;
+let isFlashing = false;
+
+function startIconFlashing() {
+    if (isFlashing) return; // Already flashing
+
+    isFlashing = true;
+    let flashCount = 0;
+    const maxFlashes = 10; // Flash 10 times
+
+    flashingInterval = setInterval(() => {
+        if (flashCount >= maxFlashes) {
+            stopIconFlashing();
+            return;
+        }
+
+        // Alternate between completion icon and normal icon
+        const iconPath = flashCount % 2 === 0 ?
+            {
+                16: 'icons/icon16.png',
+                48: 'icons/icon48.png',
+                128: 'icons/icon128.png'
+            } :
+            {
+                16: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA50lEQVQ4T6WTuxHCQAxEn0pIA2lAHagDdUAdqAN1oA7UgTpQB+pAHaAD0gFpgDRAGmACJzNn+5CwzNg/Gml3pX1PQsjMzMyMMSYzs7XWfvJMKSVmZmZ2d3c3xhhj7Hs/XOuJzCIi2traajKzs7MzIiLyXC4nVVVhZkpJIWIvl5eXfD6fExE98+fz+VJKycxkZmJm+76HiGiapi+llJhZay3GGJlZay0zM7OZqbUWImJmaq2FiJiZWmshImam1lqIiJmptRYiYma11kJEaq2FiJhZrbUQkVprISJmVmstRMTMaq2FiJhZrbUQkVprISJm1n8APgDuAP4CfQMAAAABJRU5ErkJggg==',
+                48: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+                128: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+            };
+
+        try {
+            chrome.action.setIcon({ path: iconPath });
+        } catch (error) {
+            console.error('Failed to set icon:', error);
+        }
+
+        flashCount++;
+    }, 500);
+}
+
+function stopIconFlashing() {
+    if (flashingInterval) {
+        clearInterval(flashingInterval);
+        flashingInterval = null;
+    }
+
+    isFlashing = false;
+
+    // Reset to original icon
+    try {
+        chrome.action.setIcon({
+            path: {
+                16: 'icons/icon16.png',
+                48: 'icons/icon48.png',
+                128: 'icons/icon128.png'
+            }
+        });
+    } catch (error) {
+        console.error('Failed to reset icon:', error);
+    }
 }
 
 function updateBadge() {
@@ -402,6 +717,18 @@ function updateBadge() {
     }
     
     remaining = targetSeconds - elapsed;
+
+    // Check for timer completion and trigger notification
+    if (remaining <= 0 && !timerState.hasTriggeredCompletion && timerState.isRunning) {
+        timerState.hasTriggeredCompletion = true;
+        console.log('Timer completed! Triggering notification...');
+        showCompletionNotification();
+
+        // Save the completion state
+        chrome.storage.local.set({
+            hasTriggeredCompletion: true
+        });
+    }
 
     let badgeText = '';
     let badgeColor = primaryColor;

@@ -209,6 +209,12 @@ async function loadState() {
         // Load completion state
         if (state.hasTriggeredCompletion !== undefined) {
             timerState.hasTriggeredCompletion = state.hasTriggeredCompletion;
+
+            // If timer was already completed, restart repeat notifications
+            if (state.hasTriggeredCompletion && state.isRunning && state.startTime) {
+                console.log('Timer was completed before restart - restarting repeat notifications');
+                startRepeatNotifications();
+            }
         }
 
         // Restore explicit saved state if available
@@ -540,12 +546,16 @@ function startRepeatNotifications() {
             return;
         }
 
-        // Only repeat if notifications are still enabled and timer is still in completed state
-        if (timerState.notificationsEnabled && timerState.hasTriggeredCompletion) {
+        // Only repeat if notifications are still enabled and timer has completed
+        if (timerState.notificationsEnabled && timerState.hasTriggeredCompletion && timerState.startTime) {
             console.log('Sending repeat notification...');
             showSingleNotification();
         } else {
-            console.log('Stopping repeat notifications - conditions not met');
+            console.log('Stopping repeat notifications - conditions not met:', {
+                enabled: timerState.notificationsEnabled,
+                completed: timerState.hasTriggeredCompletion,
+                hasStartTime: !!timerState.startTime
+            });
             stopRepeatNotifications();
         }
     }, 600000); // 10 minutes interval (600,000ms)
@@ -556,7 +566,7 @@ function stopRepeatNotifications() {
         clearInterval(timerState.repeatNotificationInterval);
         timerState.repeatNotificationInterval = null;
     }
-    timerState.notificationCount = 0;
+    // Don't reset notification count here - let it accumulate for proper tracking
 }
 
 function showFocusedNotification() {

@@ -442,12 +442,56 @@ function showCompletionNotification() {
     // Start repeat notification system
     startRepeatNotifications();
 
-    // Start visual attention effects
-    startIconFlashing();
+    // Skip icon flashing to avoid CSP issues - just show badge notification
+    console.log('Timer completion notification sent');
 }
 
 function showSingleNotification() {
     timerState.notificationCount++;
+
+    // Calculate current delay
+    const now = Date.now();
+    const elapsed = Math.floor((now - timerState.startTime) / 1000);
+    const targetSeconds = timerState.activeTargetMinutes * 60;
+    const delay = Math.max(elapsed - targetSeconds, 0);
+
+    let message;
+    if (delay < 10) {
+        // Timer completed on time (within 10 seconds tolerance)
+        message = "Time's up! You've worked hard :)";
+    } else {
+        // Timer is delayed - show delay in 10-second units
+        const delayIn10s = Math.floor(delay / 10) * 10;
+        const targetMinutes = timerState.activeTargetMinutes;
+
+        let delayText;
+        if (delayIn10s < 60) {
+            delayText = `${delayIn10s} sec`;
+        } else {
+            const minutes = Math.floor(delayIn10s / 60);
+            const seconds = delayIn10s % 60;
+            if (seconds === 0) {
+                delayText = `${minutes} min`;
+            } else {
+                delayText = `${minutes} min ${seconds} sec`;
+            }
+        }
+
+        let targetText;
+        if (targetMinutes < 1) {
+            targetText = `${Math.round(targetMinutes * 60)} sec`;
+        } else if (targetMinutes === Math.floor(targetMinutes)) {
+            targetText = `${Math.floor(targetMinutes)} min`;
+        } else {
+            const mins = Math.floor(targetMinutes);
+            const secs = Math.round((targetMinutes - mins) * 60);
+            targetText = secs === 0 ? `${mins} min` : `${mins} min ${secs} sec`;
+        }
+
+        message = `${delayText} late (Target was ${targetText})`;
+    }
+
+    // Don't show repeat count indicator
 
     // Clear previous notification first
     chrome.notifications.clear('timer-complete', () => {
@@ -458,7 +502,7 @@ function showSingleNotification() {
                 type: 'basic',
                 iconUrl: 'icons/icon128.png',
                 title: '⏰ Tiny Delay Timer',
-                message: `Timer completed! Time's up! ${timerState.notificationCount > 1 ? `(${timerState.notificationCount})` : ''}`,
+                message: message,
                 priority: 2,
                 requireInteraction: false
             }, (createdNotificationId) => {
@@ -485,21 +529,26 @@ function startRepeatNotifications() {
         clearInterval(timerState.repeatNotificationInterval);
     }
 
-    // Start repeat notifications every 30 seconds, up to 10 times
+    // Start repeat notifications every 10 minutes, up to 6 times
     timerState.repeatNotificationInterval = setInterval(() => {
-        if (timerState.notificationCount >= 10) {
-            // Stop repeating after 10 notifications (5 minutes total)
+        console.log(`Repeat notification check: count=${timerState.notificationCount}, enabled=${timerState.notificationsEnabled}, completed=${timerState.hasTriggeredCompletion}`);
+
+        if (timerState.notificationCount >= 6) {
+            // Stop repeating after 6 notifications (60 minutes total)
+            console.log('Stopping repeat notifications - maximum count reached');
             stopRepeatNotifications();
             return;
         }
 
         // Only repeat if notifications are still enabled and timer is still in completed state
         if (timerState.notificationsEnabled && timerState.hasTriggeredCompletion) {
+            console.log('Sending repeat notification...');
             showSingleNotification();
         } else {
+            console.log('Stopping repeat notifications - conditions not met');
             stopRepeatNotifications();
         }
-    }, 30000); // 30 seconds interval
+    }, 600000); // 10 minutes interval (600,000ms)
 }
 
 function stopRepeatNotifications() {

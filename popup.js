@@ -1106,6 +1106,9 @@ function showCompletionNotificationModal() {
     const modal = document.getElementById('completionNotificationModal');
 
     if (background && modal) {
+        // Update completion message based on current state
+        updateCompletionMessage();
+
         background.classList.add('show');
         modal.classList.add('show');
 
@@ -1128,6 +1131,54 @@ function showCompletionNotificationModal() {
         // Flash the page title
         flashPageTitle();
     }
+}
+
+function updateCompletionMessage() {
+    const messageElement = document.querySelector('.completion-message');
+    if (!messageElement) return;
+
+    // Calculate current delay from timer state
+    const elapsed = timerState.elapsedTime || 0;
+    const targetSeconds = (timerState.targetMinutes || timerState.activeTargetMinutes || 30) * 60;
+    const delay = Math.max(elapsed - targetSeconds, 0);
+
+    let message;
+    if (delay < 10) {
+        // Timer completed on time (within 10 seconds tolerance)
+        message = "Time's up! You've worked hard :)";
+    } else {
+        // Timer is delayed - show delay in 10-second units
+        const delayIn10s = Math.floor(delay / 10) * 10;
+        const targetMinutes = timerState.targetMinutes || timerState.activeTargetMinutes || 30;
+
+        let delayText;
+        if (delayIn10s < 60) {
+            delayText = `${delayIn10s} sec`;
+        } else {
+            const minutes = Math.floor(delayIn10s / 60);
+            const seconds = delayIn10s % 60;
+            if (seconds === 0) {
+                delayText = `${minutes} min`;
+            } else {
+                delayText = `${minutes} min ${seconds} sec`;
+            }
+        }
+
+        let targetText;
+        if (targetMinutes < 1) {
+            targetText = `${Math.round(targetMinutes * 60)} sec`;
+        } else if (targetMinutes === Math.floor(targetMinutes)) {
+            targetText = `${Math.floor(targetMinutes)} min`;
+        } else {
+            const mins = Math.floor(targetMinutes);
+            const secs = Math.round((targetMinutes - mins) * 60);
+            targetText = secs === 0 ? `${mins} min` : `${mins} min ${secs} sec`;
+        }
+
+        message = `${delayText} late (Target was ${targetText})`;
+    }
+
+    messageElement.textContent = message;
 }
 
 function hideCompletionNotificationModal() {
@@ -1297,20 +1348,7 @@ async function updateNotificationButtonState(button) {
 function showNotificationFeedback(isEnabled) {
     // Create a temporary feedback element
     const feedback = document.createElement('div');
-    feedback.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${isEnabled ? 'var(--primary-color)' : 'var(--text-secondary)'};
-        color: white;
-        padding: 8px 16px;
-        border-radius: 10px;
-        font-size: 14px;
-        font-weight: 500;
-        z-index: 10000;
-        animation: slideInFade 0.3s ease-out;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    `;
+    feedback.className = `notification-feedback ${isEnabled ? 'enabled' : 'disabled'}`;
 
     feedback.textContent = isEnabled ?
         '🔔 Notifications enabled' :
@@ -1321,7 +1359,7 @@ function showNotificationFeedback(isEnabled) {
     // Remove after 2 seconds
     setTimeout(() => {
         if (feedback.parentNode) {
-            feedback.style.animation = 'slideOutFade 0.3s ease-out';
+            feedback.classList.add('fade-out');
             setTimeout(() => {
                 if (feedback.parentNode) {
                     feedback.parentNode.removeChild(feedback);
@@ -1329,42 +1367,13 @@ function showNotificationFeedback(isEnabled) {
             }, 300);
         }
     }, 2000);
-
-    // Add CSS for animations if not exists
-    if (!document.getElementById('feedbackStyles')) {
-        const style = document.createElement('style');
-        style.id = 'feedbackStyles';
-        style.textContent = `
-            @keyframes slideInFade {
-                from {
-                    opacity: 0;
-                    transform: translateX(50px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
-            }
-            @keyframes slideOutFade {
-                from {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
-                to {
-                    opacity: 0;
-                    transform: translateX(50px);
-                }
-            }
-        `;
-        document.head.appendChild(style);
-    }
 }
 
 // Additional visual attention effects
 function addShakeEffect() {
     const modal = document.getElementById('completionNotificationModal');
     if (modal) {
-        modal.style.animation = 'modalSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), shake 0.5s ease-in-out 0.6s';
+        modal.classList.add('shake-effect');
     }
 }
 
@@ -1397,17 +1406,7 @@ function flashPageTitle() {
 function createVisualPulse() {
     // Create a full-screen pulse overlay for extra attention
     const pulseOverlay = document.createElement('div');
-    pulseOverlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle, transparent 40%, rgba(255, 215, 0, 0.1) 70%);
-        pointer-events: none;
-        z-index: 999;
-        animation: pulseFade 1.5s ease-out;
-    `;
+    pulseOverlay.className = 'visual-pulse-overlay';
 
     document.body.appendChild(pulseOverlay);
 
@@ -1417,27 +1416,4 @@ function createVisualPulse() {
             pulseOverlay.parentNode.removeChild(pulseOverlay);
         }
     }, 1500);
-
-    // Add CSS for pulse animation if not exists
-    if (!document.getElementById('pulseStyles')) {
-        const style = document.createElement('style');
-        style.id = 'pulseStyles';
-        style.textContent = `
-            @keyframes pulseFade {
-                0% {
-                    opacity: 0;
-                    transform: scale(0.5);
-                }
-                50% {
-                    opacity: 1;
-                    transform: scale(1.2);
-                }
-                100% {
-                    opacity: 0;
-                    transform: scale(1.5);
-                }
-            }
-        `;
-        document.head.appendChild(style);
-    }
 }

@@ -255,3 +255,9 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/linux,macos,windows,node,visualstudiocode
+
+# Claude Code related files
+CLAUDE.md
+.claude/
+claude_context.md
+.anthropic/

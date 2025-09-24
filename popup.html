@@ -12,9 +12,23 @@
 </head>
 <body>
   <div class="container">
+    <!-- Timer Completion Notification Modal -->
+    <div id="completionNotificationBackground" class="completion-modal-background"></div>
+    <div id="completionNotificationModal" class="completion-notification-modal">
+      <div class="completion-modal-content">
+        <div class="completion-icon">⏰</div>
+        <h2 class="completion-title">타이머 완료!</h2>
+        <p class="completion-message">설정하신 시간이 지났습니다.</p>
+        <div class="completion-buttons">
+          <button id="dismissNotification" class="btn-primary completion-btn">확인</button>
+          <button id="resetTimerFromNotification" class="btn-secondary completion-btn">다시 시작</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Time Picker Background -->
     <div id="timePickerBackground" class="modal-background"></div>
-    
+
     <!-- Time Picker Modal -->
     <div id="timePickerModal" class="time-picker-modal">
       <div class="modal-header">
@@ -153,6 +167,29 @@
                 <input type="number" class="second-input" min="0" max="59" value="00">
               </div>
               <input type="number" id="preset3" min="1" max="10800" value="60" class="main-input">
+            </div>
+          </div>
+
+          <!-- Notification Settings Section -->
+          <div class="notification-settings-section">
+            <h4 class="section-title">
+              <i class="bi bi-bell"></i> 알림 설정
+            </h4>
+            <div class="notification-setting">
+              <div class="setting-item">
+                <label for="notificationToggle" class="setting-label">
+                  타이머 완료 알림
+                </label>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="notificationToggle" class="toggle-input">
+                  <label for="notificationToggle" class="toggle-label">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+              <p class="setting-description">
+                타이머가 완료되면 브라우저 알림과 팝업으로 알려드립니다.
+              </p>
             </div>
           </div>
         </div>

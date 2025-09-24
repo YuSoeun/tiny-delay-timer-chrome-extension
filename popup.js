@@ -69,12 +69,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.body.classList.add('state-idle');
 
+    // Check if popup was opened due to timer completion
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('completed') === 'true') {
+      showCompletionNotificationModal();
+    }
+
     const settingsBtn = document.querySelector('.settings-btn');
     if (settingsBtn) {
       settingsBtn.addEventListener('click', function() {
         setTimeout(() => {
           updateTimePreview();
           setupPresetInputs();
+          setupNotificationSettings();
         }, 100);
       });
     }
@@ -1089,4 +1096,280 @@ function verifyTimerWithBackground() {
             }
         }
     });
+}
+
+// Timer Completion Notification Functions
+function showCompletionNotificationModal() {
+    const background = document.getElementById('completionNotificationBackground');
+    const modal = document.getElementById('completionNotificationModal');
+
+    if (background && modal) {
+        background.classList.add('show');
+        modal.classList.add('show');
+
+        // Setup event listeners for buttons
+        setupCompletionModalEventListeners();
+
+        // Auto-dismiss after 15 seconds if not interacted with (non-intrusive)
+        setTimeout(() => {
+            if (modal.classList.contains('show')) {
+                hideCompletionNotificationModal();
+            }
+        }, 15000);
+
+        // Play sound effect (if available)
+        playCompletionSound();
+
+        // Add shake effect to grab attention
+        addShakeEffect();
+
+        // Flash the page title
+        flashPageTitle();
+    }
+}
+
+function hideCompletionNotificationModal() {
+    const background = document.getElementById('completionNotificationBackground');
+    const modal = document.getElementById('completionNotificationModal');
+
+    if (background && modal) {
+        background.classList.remove('show');
+        modal.classList.remove('show');
+    }
+}
+
+function setupCompletionModalEventListeners() {
+    const dismissBtn = document.getElementById('dismissNotification');
+    const resetBtn = document.getElementById('resetTimerFromNotification');
+
+    if (dismissBtn) {
+        dismissBtn.addEventListener('click', () => {
+            hideCompletionNotificationModal();
+        });
+    }
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', async () => {
+            hideCompletionNotificationModal();
+            // Reset and start timer again with the same target time
+            const targetMinutes = timerState.targetMinutes || timerState.activeTargetMinutes;
+            if (targetMinutes) {
+                try {
+                    await chrome.runtime.sendMessage({
+                        action: 'resetTimer',
+                        targetMinutes: targetMinutes
+                    });
+
+                    // Start the timer immediately
+                    await chrome.runtime.sendMessage({
+                        action: 'startTimer',
+                        targetMinutes: targetMinutes
+                    });
+
+                    // Update UI state
+                    updateTimerState(TimerState.RUNNING);
+                } catch (error) {
+                    console.error('Failed to restart timer:', error);
+                }
+            }
+        });
+    }
+
+    // Close modal when clicking background
+    const background = document.getElementById('completionNotificationBackground');
+    if (background) {
+        background.addEventListener('click', (e) => {
+            if (e.target === background) {
+                hideCompletionNotificationModal();
+            }
+        });
+    }
+
+    // Close modal with ESC key for better accessibility
+    const handleKeyPress = (e) => {
+        if (e.key === 'Escape') {
+            hideCompletionNotificationModal();
+            document.removeEventListener('keydown', handleKeyPress);
+        }
+    };
+    document.addEventListener('keydown', handleKeyPress);
+}
+
+function playCompletionSound() {
+    // Use Web Audio API to create a simple completion sound
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        // Create a pleasant notification sound (two-tone chime)
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+
+    } catch (error) {
+        console.log('Audio playback not available:', error);
+    }
+}
+
+// Notification Settings Functions
+async function setupNotificationSettings() {
+    const notificationToggle = document.getElementById('notificationToggle');
+
+    if (!notificationToggle) {
+        console.error('Notification toggle element not found');
+        return;
+    }
+
+    // Load current notification setting
+    try {
+        const response = await chrome.runtime.sendMessage({
+            action: 'getNotificationStatus'
+        });
+
+        if (response && typeof response.enabled === 'boolean') {
+            notificationToggle.checked = response.enabled;
+        } else {
+            notificationToggle.checked = true; // Default to enabled
+        }
+    } catch (error) {
+        console.error('Failed to load notification settings:', error);
+        notificationToggle.checked = true; // Default to enabled
+    }
+
+    // Setup toggle event listener
+    notificationToggle.addEventListener('change', async () => {
+        const isEnabled = notificationToggle.checked;
+
+        try {
+            const response = await chrome.runtime.sendMessage({
+                action: 'setNotificationEnabled',
+                enabled: isEnabled
+            });
+
+            if (response && response.success) {
+                console.log('Notification setting updated:', isEnabled);
+
+                // Show brief feedback
+                showNotificationSettingFeedback(isEnabled);
+            } else {
+                console.error('Failed to save notification setting');
+                // Revert toggle state
+                notificationToggle.checked = !isEnabled;
+            }
+        } catch (error) {
+            console.error('Error updating notification setting:', error);
+            // Revert toggle state
+            notificationToggle.checked = !isEnabled;
+        }
+    });
+}
+
+function showNotificationSettingFeedback(isEnabled) {
+    const settingDescription = document.querySelector('.notification-setting .setting-description');
+
+    if (settingDescription) {
+        const originalText = settingDescription.textContent;
+        const feedbackText = isEnabled ?
+            '✅ 알림이 활성화되었습니다.' :
+            '🔕 알림이 비활성화되었습니다.';
+
+        settingDescription.textContent = feedbackText;
+        settingDescription.style.color = isEnabled ? 'var(--success-color)' : 'var(--text-secondary)';
+
+        setTimeout(() => {
+            settingDescription.textContent = originalText;
+            settingDescription.style.color = 'var(--text-secondary)';
+        }, 2000);
+    }
+}
+
+// Additional visual attention effects
+function addShakeEffect() {
+    const modal = document.getElementById('completionNotificationModal');
+    if (modal) {
+        modal.style.animation = 'modalSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), shake 0.5s ease-in-out 0.6s';
+    }
+}
+
+let originalTitle = '';
+let titleFlashInterval = null;
+
+function flashPageTitle() {
+    if (titleFlashInterval) return; // Already flashing
+
+    originalTitle = document.title;
+    let flashCount = 0;
+    const maxFlashes = 6;
+
+    titleFlashInterval = setInterval(() => {
+        if (flashCount >= maxFlashes) {
+            document.title = originalTitle;
+            clearInterval(titleFlashInterval);
+            titleFlashInterval = null;
+            return;
+        }
+
+        document.title = flashCount % 2 === 0 ?
+            '⏰ 타이머 완료!' :
+            '🔔 Time\'s Up!';
+
+        flashCount++;
+    }, 800);
+}
+
+function createVisualPulse() {
+    // Create a full-screen pulse overlay for extra attention
+    const pulseOverlay = document.createElement('div');
+    pulseOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, transparent 40%, rgba(255, 215, 0, 0.1) 70%);
+        pointer-events: none;
+        z-index: 999;
+        animation: pulseFade 1.5s ease-out;
+    `;
+
+    document.body.appendChild(pulseOverlay);
+
+    // Remove after animation
+    setTimeout(() => {
+        if (pulseOverlay.parentNode) {
+            pulseOverlay.parentNode.removeChild(pulseOverlay);
+        }
+    }, 1500);
+
+    // Add CSS for pulse animation if not exists
+    if (!document.getElementById('pulseStyles')) {
+        const style = document.createElement('style');
+        style.id = 'pulseStyles';
+        style.textContent = `
+            @keyframes pulseFade {
+                0% {
+                    opacity: 0;
+                    transform: scale(0.5);
+                }
+                50% {
+                    opacity: 1;
+                    transform: scale(1.2);
+                }
+                100% {
+                    opacity: 0;
+                    transform: scale(1.5);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
 }

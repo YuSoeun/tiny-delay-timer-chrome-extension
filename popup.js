@@ -81,10 +81,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         setTimeout(() => {
           updateTimePreview();
           setupPresetInputs();
-          setupNotificationSettings();
         }, 100);
       });
     }
+
+    // Setup notification toggle button
+    setupNotificationToggle();
     
     window.addEventListener('presetsUpdated', (event) => {
       if (event.detail && Array.isArray(event.detail)) {
@@ -1227,75 +1229,134 @@ function playCompletionSound() {
     }
 }
 
-// Notification Settings Functions
-async function setupNotificationSettings() {
-    const notificationToggle = document.getElementById('notificationToggle');
+// Notification Toggle Button Functions
+async function setupNotificationToggle() {
+    const notificationBtn = document.getElementById('notificationToggleBtn');
 
-    if (!notificationToggle) {
-        console.error('Notification toggle element not found');
+    if (!notificationBtn) {
+        console.error('Notification toggle button element not found');
         return;
     }
 
-    // Load current notification setting
+    // Load current notification setting and update button appearance
+    await updateNotificationButtonState(notificationBtn);
+
+    // Setup click event listener
+    notificationBtn.addEventListener('click', async () => {
+        try {
+            // Get current state
+            const response = await chrome.runtime.sendMessage({
+                action: 'getNotificationStatus'
+            });
+
+            const currentState = response ? response.enabled : true;
+            const newState = !currentState;
+
+            // Update setting
+            const updateResponse = await chrome.runtime.sendMessage({
+                action: 'setNotificationEnabled',
+                enabled: newState
+            });
+
+            if (updateResponse && updateResponse.success) {
+                console.log('Notification setting toggled:', newState);
+                await updateNotificationButtonState(notificationBtn);
+                showNotificationFeedback(newState);
+            } else {
+                console.error('Failed to save notification setting');
+            }
+        } catch (error) {
+            console.error('Error updating notification setting:', error);
+        }
+    });
+}
+
+async function updateNotificationButtonState(button) {
     try {
         const response = await chrome.runtime.sendMessage({
             action: 'getNotificationStatus'
         });
 
-        if (response && typeof response.enabled === 'boolean') {
-            notificationToggle.checked = response.enabled;
+        const isEnabled = response ? response.enabled : true;
+        const icon = button.querySelector('i');
+
+        if (isEnabled) {
+            button.classList.add('enabled');
+            button.title = 'Notifications enabled - Click to disable';
+            icon.className = 'bi bi-bell-fill';
         } else {
-            notificationToggle.checked = true; // Default to enabled
+            button.classList.remove('enabled');
+            button.title = 'Notifications disabled - Click to enable';
+            icon.className = 'bi bi-bell-slash';
         }
     } catch (error) {
         console.error('Failed to load notification settings:', error);
-        notificationToggle.checked = true; // Default to enabled
     }
-
-    // Setup toggle event listener
-    notificationToggle.addEventListener('change', async () => {
-        const isEnabled = notificationToggle.checked;
-
-        try {
-            const response = await chrome.runtime.sendMessage({
-                action: 'setNotificationEnabled',
-                enabled: isEnabled
-            });
-
-            if (response && response.success) {
-                console.log('Notification setting updated:', isEnabled);
-
-                // Show brief feedback
-                showNotificationSettingFeedback(isEnabled);
-            } else {
-                console.error('Failed to save notification setting');
-                // Revert toggle state
-                notificationToggle.checked = !isEnabled;
-            }
-        } catch (error) {
-            console.error('Error updating notification setting:', error);
-            // Revert toggle state
-            notificationToggle.checked = !isEnabled;
-        }
-    });
 }
 
-function showNotificationSettingFeedback(isEnabled) {
-    const settingDescription = document.querySelector('.notification-setting .setting-description');
+function showNotificationFeedback(isEnabled) {
+    // Create a temporary feedback element
+    const feedback = document.createElement('div');
+    feedback.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${isEnabled ? 'var(--primary-color)' : 'var(--text-secondary)'};
+        color: white;
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 10000;
+        animation: slideInFade 0.3s ease-out;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    `;
 
-    if (settingDescription) {
-        const originalText = settingDescription.textContent;
-        const feedbackText = isEnabled ?
-            '✅ Notifications enabled.' :
-            '🔕 Notifications disabled.';
+    feedback.textContent = isEnabled ?
+        '🔔 Notifications enabled' :
+        '🔕 Notifications disabled';
 
-        settingDescription.textContent = feedbackText;
-        settingDescription.style.color = isEnabled ? 'var(--success-color)' : 'var(--text-secondary)';
+    document.body.appendChild(feedback);
 
-        setTimeout(() => {
-            settingDescription.textContent = originalText;
-            settingDescription.style.color = 'var(--text-secondary)';
-        }, 2000);
+    // Remove after 2 seconds
+    setTimeout(() => {
+        if (feedback.parentNode) {
+            feedback.style.animation = 'slideOutFade 0.3s ease-out';
+            setTimeout(() => {
+                if (feedback.parentNode) {
+                    feedback.parentNode.removeChild(feedback);
+                }
+            }, 300);
+        }
+    }, 2000);
+
+    // Add CSS for animations if not exists
+    if (!document.getElementById('feedbackStyles')) {
+        const style = document.createElement('style');
+        style.id = 'feedbackStyles';
+        style.textContent = `
+            @keyframes slideInFade {
+                from {
+                    opacity: 0;
+                    transform: translateX(50px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+            @keyframes slideOutFade {
+                from {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateX(50px);
+                }
+            }
+        `;
+        document.head.appendChild(style);
     }
 }
 

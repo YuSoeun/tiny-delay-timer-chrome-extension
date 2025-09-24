@@ -113,9 +113,14 @@
           <button class="preset-btn" data-time="41">00:41:00</button>
           <button class="preset-btn" data-time="60">01:00:00</button>
         </div>
-        <button class="settings-btn" title="Edit time presets">
-          <i class="bi bi-gear"></i>
-        </button>
+        <div class="header-buttons">
+          <button id="notificationToggleBtn" class="notification-btn" title="Toggle notifications">
+            <i class="bi bi-bell-fill"></i>
+          </button>
+          <button class="settings-btn" title="Edit time presets">
+            <i class="bi bi-gear"></i>
+          </button>
+        </div>
       </div>
     </div>
     
@@ -167,29 +172,6 @@
                 <input type="number" class="second-input" min="0" max="59" value="00">
               </div>
               <input type="number" id="preset3" min="1" max="10800" value="60" class="main-input">
-            </div>
-          </div>
-
-          <!-- Notification Settings Section -->
-          <div class="notification-settings-section">
-            <h4 class="section-title">
-              <i class="bi bi-bell"></i> Notification Settings
-            </h4>
-            <div class="notification-setting">
-              <div class="setting-item">
-                <label for="notificationToggle" class="setting-label">
-                  Timer completion alerts
-                </label>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="notificationToggle" class="toggle-input">
-                  <label for="notificationToggle" class="toggle-label">
-                    <span class="toggle-slider"></span>
-                  </label>
-                </div>
-              </div>
-              <p class="setting-description">
-                Get notified with browser alerts and popups when your timer completes.
-              </p>
             </div>
           </div>
         </div>

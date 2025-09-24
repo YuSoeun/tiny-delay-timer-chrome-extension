@@ -887,93 +887,49 @@ input[type="number"]:focus {
   }
 }
 
-/* Notification Settings Styles */
-.notification-settings-section {
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid rgba(138, 123, 255, 0.1);
-}
+/* Remove old notification settings styles - no longer needed */
 
-.section-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 16px 0;
+/* Header buttons container */
+.header-buttons {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.section-title i {
-  color: var(--primary-color);
-}
-
-.notification-setting {
-  margin-bottom: 16px;
-}
-
-.setting-item {
+/* Notification toggle button - matching settings button style */
+.notification-btn {
+  width: 32px;
+  height: 32px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
-}
-
-.setting-label {
-  font-weight: 500;
-  color: var(--text-primary);
-  margin: 0;
-  flex: 1;
-}
-
-.setting-description {
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin: 0;
-  line-height: 1.4;
-}
-
-/* Toggle Switch Styles */
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-}
-
-.toggle-input {
-  display: none;
-}
-
-.toggle-label {
-  display: block;
-  width: 48px;
-  height: 24px;
-  background: rgba(174, 174, 185, 0.3);
-  border-radius: 12px;
+  justify-content: center;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  position: relative;
+  transition: all 0.2s ease;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
 }
 
-.toggle-slider {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
-  background: white;
-  border-radius: 50%;
-  transition: transform 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+.notification-btn:hover {
+  transform: translateY(-2px);
+  color: var(--primary-color);
+  box-shadow: 0 4px 8px rgba(122, 105, 230, 0.15);
 }
 
-.toggle-input:checked + .toggle-label {
-  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+.notification-btn.enabled {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
 }
 
-.toggle-input:checked + .toggle-label .toggle-slider {
-  transform: translateX(24px);
+.notification-btn.enabled:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(122, 105, 230, 0.25);
 }
 
-.toggle-label:hover {
-  box-shadow: 0 0 8px rgba(138, 123, 255, 0.3);
+.notification-btn i {
+  font-size: 14px;
 }

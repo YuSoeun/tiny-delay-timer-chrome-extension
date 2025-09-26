@@ -85,9 +85,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
 
-    // Setup notification toggle button
-    setupNotificationToggle();
-    
+    // Initialize dark mode (still needed for startup)
+    await initializeDarkMode();
+
     window.addEventListener('presetsUpdated', (event) => {
       if (event.detail && Array.isArray(event.detail)) {
         updatePresetButtons(event.detail);
@@ -208,6 +208,18 @@ function setupEventListeners(elements) {
         });
     }
 
+    // Setup custom time button
+    const customTimeBtn = document.querySelector('.custom-time-btn');
+    if (customTimeBtn) {
+        customTimeBtn.addEventListener('click', () => {
+            if (window.timePickerModal) {
+                const totalTimeInput = document.getElementById('total-time');
+                const currentTime = totalTimeInput ? totalTimeInput.value : '00:30:00';
+                window.timePickerModal.open(currentTime);
+            }
+        });
+    }
+
     const settingsBtn = document.querySelector('.settings-btn');
     if (settingsBtn) {
         settingsBtn.addEventListener('click', openPresetModal);
@@ -218,9 +230,9 @@ function setupEventListeners(elements) {
         cancelPresetsBtn.addEventListener('click', closePresetModal);
     }
     
-    const savePresetsBtn = document.getElementById('savePresets');
-    if (savePresetsBtn) {
-        savePresetsBtn.addEventListener('click', savePresetChanges);
+    const saveSettingsBtn = document.getElementById('saveSettings');
+    if (saveSettingsBtn) {
+        saveSettingsBtn.addEventListener('click', saveAllSettings);
     }
     
     const closeBtn = document.querySelector('.close-btn');
@@ -902,30 +914,43 @@ function updateMainInputFromTimeInputs(wrapper) {
 }
 
 function openPresetModal() {
-  chrome.storage.local.get(['presets'], (result) => {
+  chrome.storage.local.get(['presets', 'notificationsEnabled', 'theme'], (result) => {
+    // Load presets
     const presets = result.presets || [30, 41, 60];
-    
+
     document.querySelectorAll('.preset-edit').forEach((preset, index) => {
       const timeValue = presets[index] || 30;
-      
+
       const hours = Math.floor(timeValue / 60);
       const minutes = Math.floor(timeValue % 60);
       const seconds = Math.round((timeValue - Math.floor(timeValue)) * 60);
-      
+
       const hourInput = preset.querySelector('.hour-input');
       const minuteInput = preset.querySelector('.minute-input');
       const secondInput = preset.querySelector('.second-input');
       const mainInput = preset.querySelector('.main-input');
-      
+
       if (hourInput) hourInput.value = String(hours).padStart(2, '0');
       if (minuteInput) minuteInput.value = String(minutes).padStart(2, '0');
       if (secondInput) secondInput.value = String(seconds).padStart(2, '0');
       if (mainInput) mainInput.value = timeValue;
     });
-    
+
+    // Load notification setting
+    const notificationToggle = document.getElementById('notificationToggle');
+    if (notificationToggle) {
+      notificationToggle.checked = result.notificationsEnabled !== false; // default true
+    }
+
+    // Load dark mode setting
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    if (darkModeToggle) {
+      darkModeToggle.checked = result.theme === 'dark';
+    }
+
     setupPresetInputs();
   });
-  
+
   const modal = document.getElementById('presetModal');
   if (modal) {
     modal.classList.add('show');
@@ -940,36 +965,78 @@ function closePresetModal() {
     document.getElementById('presetModal').classList.remove('show');
 }
 
-function savePresetChanges() {
-  const presets = [];
-  
-  document.querySelectorAll('.preset-edit .time-input-wrapper').forEach(wrapper => {
-    const hourInput = wrapper.querySelector('.hour-input');
-    const minuteInput = wrapper.querySelector('.minute-input');
-    const secondInput = wrapper.querySelector('.second-input');
-    
-    if (hourInput && minuteInput && secondInput) {
-      const h = parseInt(hourInput.value) || 0;
-      const m = parseInt(minuteInput.value) || 0;
-      const s = parseInt(secondInput.value) || 0;
-      
-      const totalSeconds = h * 3600 + m * 60 + s;
-      presets.push(totalSeconds / 60);
-    }
-  });
-  
-  while (presets.length < 3) {
-    presets.push(30);
-  }
-  
-  if (presets.every(val => !isNaN(val) && val > 0)) {
-    chrome.storage.local.set({ presets }, () => {
-      updatePresetButtons(presets);
-      closePresetModal();
+async function saveAllSettings() {
+  try {
+    // Save presets
+    const presets = [];
+
+    document.querySelectorAll('.preset-edit .time-input-wrapper').forEach(wrapper => {
+      const hourInput = wrapper.querySelector('.hour-input');
+      const minuteInput = wrapper.querySelector('.minute-input');
+      const secondInput = wrapper.querySelector('.second-input');
+
+      if (hourInput && minuteInput && secondInput) {
+        const h = parseInt(hourInput.value) || 0;
+        const m = parseInt(minuteInput.value) || 0;
+        const s = parseInt(secondInput.value) || 0;
+
+        const totalSeconds = h * 3600 + m * 60 + s;
+        presets.push(totalSeconds / 60);
+      }
     });
-  } else {
-    alert('Please enter valid preset values (greater than 0).');
+
+    while (presets.length < 3) {
+      presets.push(30);
+    }
+
+    if (!presets.every(val => !isNaN(val) && val > 0)) {
+      alert('Please enter valid preset values (greater than 0).');
+      return;
+    }
+
+    // Save notification setting
+    const notificationToggle = document.getElementById('notificationToggle');
+    const notificationsEnabled = notificationToggle ? notificationToggle.checked : true;
+
+    // Save dark mode setting
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const isDarkMode = darkModeToggle ? darkModeToggle.checked : false;
+    const newTheme = isDarkMode ? 'dark' : 'light';
+
+    // Save all settings
+    await chrome.storage.local.set({
+      presets,
+      notificationsEnabled,
+      theme: newTheme
+    });
+
+    // Update UI
+    updatePresetButtons(presets);
+    await setTheme(newTheme);
+
+    // Update notification status in background
+    chrome.runtime.sendMessage({
+      action: 'setNotificationEnabled',
+      enabled: notificationsEnabled
+    });
+
+    // Update theme in background
+    chrome.runtime.sendMessage({
+      action: 'themeChanged',
+      theme: newTheme
+    });
+
+    closePresetModal();
+
+  } catch (error) {
+    console.error('Error saving settings:', error);
+    alert('Failed to save settings. Please try again.');
   }
+}
+
+function savePresetChanges() {
+  // Keep old function for compatibility
+  saveAllSettings();
 }
 
 function updatePresetButtons(presets = [30, 41, 60]) {
@@ -1419,4 +1486,103 @@ function createVisualPulse() {
             pulseOverlay.parentNode.removeChild(pulseOverlay);
         }
     }, 1500);
+}
+
+// Dark Mode Toggle Functions
+async function setupDarkModeToggle() {
+    const darkModeBtn = document.getElementById('darkModeToggleBtn');
+
+    if (!darkModeBtn) {
+        console.error('Dark mode toggle button element not found');
+        return;
+    }
+
+    // Initialize dark mode from storage
+    await initializeDarkMode();
+
+    // Setup click event listener
+    darkModeBtn.addEventListener('click', async () => {
+        try {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            await setTheme(newTheme);
+            updateDarkModeButton(darkModeBtn, newTheme);
+
+            // Notify background script of theme change for badge updates
+            chrome.runtime.sendMessage({
+                action: 'themeChanged',
+                theme: newTheme
+            }).catch(() => {
+                // Silent fail if background script isn't ready
+            });
+
+        } catch (error) {
+            console.error('Error toggling dark mode:', error);
+        }
+    });
+}
+
+async function initializeDarkMode() {
+    try {
+        // Check if user has a saved preference
+        const result = await chrome.storage.local.get(['theme']);
+        let theme = result.theme;
+
+        // If no preference saved, detect system preference
+        if (!theme) {
+            theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        await setTheme(theme);
+
+        const darkModeBtn = document.getElementById('darkModeToggleBtn');
+        if (darkModeBtn) {
+            updateDarkModeButton(darkModeBtn, theme);
+        }
+
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', async (e) => {
+            const savedTheme = await chrome.storage.local.get(['theme']);
+            // Only auto-switch if user hasn't manually set a preference
+            if (!savedTheme.theme) {
+                const newTheme = e.matches ? 'dark' : 'light';
+                await setTheme(newTheme);
+                if (darkModeBtn) {
+                    updateDarkModeButton(darkModeBtn, newTheme);
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error initializing dark mode:', error);
+        // Fallback to light theme
+        await setTheme('light');
+    }
+}
+
+async function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // Save preference
+    await chrome.storage.local.set({ theme });
+
+    // Update CSS variables for background script
+    setTimeout(() => {
+        sendCssVariablesToBackground();
+    }, 100);
+}
+
+function updateDarkModeButton(button, theme) {
+    const icon = button.querySelector('i');
+
+    if (theme === 'dark') {
+        button.classList.add('active');
+        button.title = 'Switch to light mode';
+        icon.className = 'bi bi-sun';
+    } else {
+        button.classList.remove('active');
+        button.title = 'Switch to dark mode';
+        icon.className = 'bi bi-moon';
+    }
 }

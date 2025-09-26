@@ -15,6 +15,41 @@
   --card-shadow: 0 8px 16px rgba(122, 105, 230, 0.12);
 }
 
+/* Dark mode theme */
+[data-theme="dark"] {
+  --primary-color: #9d8cff;
+  --primary-hover: #8a7bff;
+  --gradient-start: #c5b8ff;
+  --gradient-end: #8a7bff;
+  --background: #1a1a2e;
+  --card-bg: rgba(30, 30, 52, 0.9);
+  --text-primary: #e8e8f0;
+  --text-secondary: #c8c8d0;
+  --border-color: rgba(157, 140, 255, 0.15);
+  --danger-color: #ff85a3;
+  --danger-hover: #ff6b8a;
+  --success-color: #7ae6c5;
+  --shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  --card-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Update dark mode background gradients */
+[data-theme="dark"] body::before {
+  background: linear-gradient(135deg, #2d2d4a, #1a1a2e);
+  opacity: 0.4;
+}
+
+[data-theme="dark"] body::after {
+  background: linear-gradient(135deg, #3d2a4a, #2a1a3a);
+  opacity: 0.3;
+}
+
+/* Smooth transitions for theme switching */
+body, .status-card, .btn-main, .notification-btn, .dark-mode-btn, .settings-btn,
+.preset-btn, .modal-content, .completion-modal-content {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
 body {
   font-family: 'Inter', 'SF Pro Display', 'Segoe UI', sans-serif;
   margin: 0;
@@ -931,6 +966,44 @@ input[type="number"]:focus {
 }
 
 .notification-btn i {
+  font-size: 14px;
+}
+
+/* Dark mode toggle button - matching notification button style */
+.dark-mode-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.dark-mode-btn:hover {
+  transform: translateY(-2px);
+  color: var(--primary-color);
+  box-shadow: 0 4px 8px rgba(122, 105, 230, 0.15);
+}
+
+.dark-mode-btn.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.dark-mode-btn.active:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(122, 105, 230, 0.25);
+}
+
+.dark-mode-btn i {
   font-size: 14px;
 }
 

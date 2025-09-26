@@ -25,6 +25,37 @@
   box-shadow: 0 3px 8px rgba(138, 123, 255, 0.25);
 }
 
+/* Custom time button */
+.custom-time-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 14px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.custom-time-btn:hover {
+  background: var(--success-color);
+  color: white;
+  border-color: var(--success-color);
+  box-shadow: 0 3px 8px rgba(109, 213, 181, 0.25);
+  transform: translateY(-1px);
+}
+
+.custom-time-btn i {
+  font-size: 16px;
+}
+
 /* Settings Button */
 .settings-btn {
   width: 32px;
@@ -157,6 +188,115 @@
 #presetModal .modal-body {
   padding: 8px 12px;
   background: var(--card-bg);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Settings Sections */
+.settings-section {
+  margin-bottom: 20px;
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.settings-section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(138, 123, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings-section h4 i {
+  color: var(--primary-color);
+  font-size: 13px;
+}
+
+/* Setting Items */
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 4px;
+  border-bottom: 1px solid rgba(138, 123, 255, 0.05);
+  margin-bottom: 4px;
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.setting-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.setting-label i {
+  color: var(--text-secondary);
+  width: 14px;
+  text-align: center;
+}
+
+.setting-control {
+  display: flex;
+  align-items: center;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-switch .slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(138, 123, 255, 0.2);
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+.toggle-switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: var(--text-secondary);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.toggle-switch input:checked + .slider {
+  background-color: var(--primary-color);
+}
+
+.toggle-switch input:checked + .slider:before {
+  transform: translateX(20px);
+  background-color: white;
 }
 
 /* Compact Preset Edit Rows */

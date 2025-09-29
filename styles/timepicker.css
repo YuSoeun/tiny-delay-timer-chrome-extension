@@ -104,26 +104,27 @@
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) scale(0.9);
+    transform: translate(-50%, -50%) scale(0.85);
     width: 280px;
     max-height: 320px;
     min-height: 170px;
     background: var(--card-bg);
-    border-radius: 16px;
+    border-radius: 18px;
     padding: 6px 12px;
     display: none;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(138, 123, 255, 0.1);
     z-index: 1000;
     border: 1px solid var(--border-color);
-    backdrop-filter: none;
+    backdrop-filter: blur(8px);
     opacity: 0;
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease, box-shadow 0.35s ease;
     overflow: hidden;
 }
 
 .time-picker-modal.show {
     transform: translate(-50%, -50%) scale(1);
     opacity: 1;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25), 0 6px 20px rgba(138, 123, 255, 0.15);
 }
 
 .time-picker-container {
@@ -233,19 +234,29 @@
 
 .time-item.active {
     color: var(--primary-color);
-    font-weight: 600;
-    font-size: 18px;
+    font-weight: 700;
+    font-size: 19px;
     opacity: 1;
     position: relative;
     z-index: 10;
-    animation: pulse 0.5s ease-out;
-    text-shadow: 0 1px 1px rgba(138, 123, 255, 0.1);
+    animation: activeItemPulse 0.6s ease-out;
+    text-shadow: 0 1px 2px rgba(138, 123, 255, 0.2), 0 0 4px rgba(138, 123, 255, 0.1);
+    transform: scale(1.02);
 }
 
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
+@keyframes activeItemPulse {
+    0% {
+        transform: scale(1);
+        text-shadow: 0 1px 2px rgba(138, 123, 255, 0.2), 0 0 4px rgba(138, 123, 255, 0.1);
+    }
+    50% {
+        transform: scale(1.08);
+        text-shadow: 0 2px 4px rgba(138, 123, 255, 0.3), 0 0 8px rgba(138, 123, 255, 0.2);
+    }
+    100% {
+        transform: scale(1.02);
+        text-shadow: 0 1px 2px rgba(138, 123, 255, 0.2), 0 0 4px rgba(138, 123, 255, 0.1);
+    }
 }
 
 .time-item.semi-active {
@@ -260,13 +271,27 @@
     right: 0;
     height: 30px;
     transform: translateY(-50%);
-    background: rgba(138, 123, 255, 0.06);
-    border-top: 1.5px solid var(--primary-color);
-    border-bottom: 1.5px solid var(--primary-color);
+    background: rgba(138, 123, 255, 0.12);
+    border-top: 2px solid var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    border-left: 1px solid rgba(138, 123, 255, 0.3);
+    border-right: 1px solid rgba(138, 123, 255, 0.3);
     pointer-events: none;
-    border-radius: 2px;
+    border-radius: 6px;
     z-index: 5;
-    box-shadow: 0 0 6px rgba(138, 123, 255, 0.08);
+    box-shadow: 0 0 12px rgba(138, 123, 255, 0.15), inset 0 0 20px rgba(138, 123, 255, 0.05);
+    animation: selectionGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes selectionGlow {
+    0% {
+        box-shadow: 0 0 12px rgba(138, 123, 255, 0.15), inset 0 0 20px rgba(138, 123, 255, 0.05);
+        background: rgba(138, 123, 255, 0.12);
+    }
+    100% {
+        box-shadow: 0 0 16px rgba(138, 123, 255, 0.25), inset 0 0 30px rgba(138, 123, 255, 0.08);
+        background: rgba(138, 123, 255, 0.16);
+    }
 }
 
 .input-group {

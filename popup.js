@@ -227,10 +227,15 @@ function setupEventListeners(elements) {
         cancelPresetsBtn.addEventListener('click', closePresetModal);
     }
     
-    // General modal event listeners
-    const saveGeneralBtn = document.getElementById('saveGeneralSettings');
-    if (saveGeneralBtn) {
-        saveGeneralBtn.addEventListener('click', saveGeneralSettings);
+    // Auto-save toggles in general settings
+    const notificationToggle = document.getElementById('notificationToggle');
+    if (notificationToggle) {
+        notificationToggle.addEventListener('change', saveGeneralSettings);
+    }
+
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('change', saveGeneralSettings);
     }
 
     // Preset modal event listeners
@@ -412,42 +417,58 @@ function setupEventListeners(elements) {
 
 function updateTimerState(newState) {
   document.body.classList.remove('state-idle', 'state-running', 'state-paused');
-  
+
   document.body.classList.add(`state-${newState}`);
-  
+
   const idleState = document.getElementById('idle-state');
   const runningState = document.getElementById('running-state');
   const playBtn = document.getElementById('playBtn');
   const pauseBtn = document.getElementById('pauseBtn');
   const resetBtn = document.getElementById('resetBtn');
-  
+  const timerDisplay = document.getElementById('timerDisplay');
+
   [playBtn, pauseBtn, resetBtn].forEach(btn => btn.classList.remove('enabled'));
-  
+
   switch(newState) {
     case TimerState.IDLE:
       idleState.classList.add('active');
       runningState.classList.remove('active');
-      
+
       playBtn.classList.add('enabled');
+
+      // Show blinking cursor when timer is idle
+      if (timerDisplay) {
+        timerDisplay.classList.add('clickable');
+      }
       break;
-      
+
     case TimerState.RUNNING:
       idleState.classList.remove('active');
       runningState.classList.add('active');
-      
+
       pauseBtn.classList.add('enabled');
       resetBtn.classList.add('enabled');
+
+      // Hide cursor when timer is running
+      if (timerDisplay) {
+        timerDisplay.classList.remove('clickable');
+      }
       break;
-      
+
     case TimerState.PAUSED:
       idleState.classList.remove('active');
       runningState.classList.add('active');
-      
+
       playBtn.classList.add('enabled');
       resetBtn.classList.add('enabled');
+
+      // Hide cursor when timer is paused
+      if (timerDisplay) {
+        timerDisplay.classList.remove('clickable');
+      }
       break;
   }
-  
+
   currentState = newState;
 }
 

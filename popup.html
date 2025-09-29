@@ -112,25 +112,25 @@
           <button class="preset-btn" data-time="30">00:30:00</button>
           <button class="preset-btn" data-time="41">00:41:00</button>
           <button class="preset-btn" data-time="60">01:00:00</button>
-          <button class="custom-time-btn" title="Set custom time">
-            <i class="bi bi-plus-circle"></i>
+          <button class="custom-time-btn" title="Edit time presets">
+            <i class="bi bi-alarm"></i>
           </button>
         </div>
         <div class="header-buttons">
-          <button class="settings-btn" title="Settings">
-            <i class="bi bi-gear"></i>
+          <button class="settings-btn" title="General settings">
+            <i class="bi bi-toggles2"></i>
           </button>
         </div>
       </div>
     </div>
     
-    <!-- Preset settings modal -->
-    <div id="presetModal" class="modal">
+    <!-- General Settings Modal -->
+    <div id="generalModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h3><i class="bi bi-gear-fill"></i> Settings</h3>
+          <h3><i class="bi bi-toggles2"></i> General Settings</h3>
           <div class="header-buttons">
-            <button id="saveSettings" class="btn-primary btn-small"><i class="bi bi-check2"></i> Save</button>
+            <button id="saveGeneralSettings" class="btn-primary btn-small"><i class="bi bi-check2"></i> Save</button>
             <button class="close-btn"><i class="bi bi-x"></i></button>
           </div>
         </div>
@@ -163,7 +163,23 @@
               </div>
             </div>
           </div>
+        </div>
+        <div class="modal-footer">
+        </div>
+      </div>
+    </div>
 
+    <!-- Time Presets Modal -->
+    <div id="presetModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="bi bi-alarm"></i> Time Presets</h3>
+          <div class="header-buttons">
+            <button id="savePresetSettings" class="btn-primary btn-small"><i class="bi bi-check2"></i> Save</button>
+            <button class="close-btn"><i class="bi bi-x"></i></button>
+          </div>
+        </div>
+        <div class="modal-body">
           <!-- Time Presets Section -->
           <div class="settings-section">
             <h4><i class="bi bi-alarm"></i> Time Presets</h4>

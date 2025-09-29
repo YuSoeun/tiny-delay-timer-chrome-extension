@@ -208,21 +208,18 @@ function setupEventListeners(elements) {
         });
     }
 
-    // Setup custom time button
+    // Setup custom time button to open preset modal
     const customTimeBtn = document.querySelector('.custom-time-btn');
     if (customTimeBtn) {
         customTimeBtn.addEventListener('click', () => {
-            if (window.timePickerModal) {
-                const totalTimeInput = document.getElementById('total-time');
-                const currentTime = totalTimeInput ? totalTimeInput.value : '00:30:00';
-                window.timePickerModal.open(currentTime);
-            }
+            openPresetModal();
         });
     }
 
+    // Setup settings button to open general modal
     const settingsBtn = document.querySelector('.settings-btn');
     if (settingsBtn) {
-        settingsBtn.addEventListener('click', openPresetModal);
+        settingsBtn.addEventListener('click', openGeneralModal);
     }
 
     const cancelPresetsBtn = document.getElementById('cancelPresets');
@@ -230,15 +227,32 @@ function setupEventListeners(elements) {
         cancelPresetsBtn.addEventListener('click', closePresetModal);
     }
     
-    const saveSettingsBtn = document.getElementById('saveSettings');
-    if (saveSettingsBtn) {
-        saveSettingsBtn.addEventListener('click', saveAllSettings);
+    // General modal event listeners
+    const saveGeneralBtn = document.getElementById('saveGeneralSettings');
+    if (saveGeneralBtn) {
+        saveGeneralBtn.addEventListener('click', saveGeneralSettings);
     }
-    
-    const closeBtn = document.querySelector('.close-btn');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closePresetModal);
+
+    // Preset modal event listeners
+    const savePresetBtn = document.getElementById('savePresetSettings');
+    if (savePresetBtn) {
+        savePresetBtn.addEventListener('click', savePresetSettings);
     }
+
+    // Close button handlers for both modals
+    const closeBtns = document.querySelectorAll('.close-btn');
+    closeBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const modal = e.target.closest('.modal');
+            if (modal) {
+                if (modal.id === 'generalModal') {
+                    closeGeneralModal();
+                } else if (modal.id === 'presetModal') {
+                    closePresetModal();
+                }
+            }
+        });
+    });
 
     const totalTimeInput = document.getElementById('total-time');
     if (!totalTimeInput) {
@@ -913,8 +927,33 @@ function updateMainInputFromTimeInputs(wrapper) {
   mainInput.value = totalSeconds / 60;
 }
 
+function openGeneralModal() {
+  chrome.storage.local.get(['notificationsEnabled', 'theme'], (result) => {
+    // Load notification setting
+    const notificationToggle = document.getElementById('notificationToggle');
+    if (notificationToggle) {
+      notificationToggle.checked = result.notificationsEnabled !== false;
+    }
+
+    // Load dark mode setting
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    if (darkModeToggle) {
+      darkModeToggle.checked = result.theme === 'dark';
+    }
+
+    const modal = document.getElementById('generalModal');
+    if (modal) {
+      modal.classList.add('show');
+      setTimeout(() => {
+        const firstInput = modal.querySelector('input');
+        if (firstInput) firstInput.focus();
+      }, 300);
+    }
+  });
+}
+
 function openPresetModal() {
-  chrome.storage.local.get(['presets', 'notificationsEnabled', 'theme'], (result) => {
+  chrome.storage.local.get(['presets'], (result) => {
     // Load presets
     const presets = result.presets || [30, 41, 60];
 
@@ -936,18 +975,6 @@ function openPresetModal() {
       if (mainInput) mainInput.value = timeValue;
     });
 
-    // Load notification setting
-    const notificationToggle = document.getElementById('notificationToggle');
-    if (notificationToggle) {
-      notificationToggle.checked = result.notificationsEnabled !== false; // default true
-    }
-
-    // Load dark mode setting
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    if (darkModeToggle) {
-      darkModeToggle.checked = result.theme === 'dark';
-    }
-
     setupPresetInputs();
   });
 
@@ -961,11 +988,55 @@ function openPresetModal() {
   }
 }
 
+function closeGeneralModal() {
+    document.getElementById('generalModal').classList.remove('show');
+}
+
 function closePresetModal() {
     document.getElementById('presetModal').classList.remove('show');
 }
 
-async function saveAllSettings() {
+async function saveGeneralSettings() {
+  try {
+    // Save notification setting
+    const notificationToggle = document.getElementById('notificationToggle');
+    const notificationsEnabled = notificationToggle ? notificationToggle.checked : true;
+
+    // Save dark mode setting
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const isDarkMode = darkModeToggle ? darkModeToggle.checked : false;
+    const newTheme = isDarkMode ? 'dark' : 'light';
+
+    // Save general settings
+    await chrome.storage.local.set({
+      notificationsEnabled,
+      theme: newTheme
+    });
+
+    // Apply theme immediately
+    await setTheme(newTheme);
+
+    // Update notification status in background
+    chrome.runtime.sendMessage({
+      action: 'setNotificationEnabled',
+      enabled: notificationsEnabled
+    });
+
+    // Update theme in background
+    chrome.runtime.sendMessage({
+      action: 'themeChanged',
+      theme: newTheme
+    });
+
+    closeGeneralModal();
+
+  } catch (error) {
+    console.error('Error saving general settings:', error);
+    alert('Failed to save general settings. Please try again.');
+  }
+}
+
+async function savePresetSettings() {
   try {
     // Save presets
     const presets = [];
@@ -994,43 +1065,19 @@ async function saveAllSettings() {
       return;
     }
 
-    // Save notification setting
-    const notificationToggle = document.getElementById('notificationToggle');
-    const notificationsEnabled = notificationToggle ? notificationToggle.checked : true;
-
-    // Save dark mode setting
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    const isDarkMode = darkModeToggle ? darkModeToggle.checked : false;
-    const newTheme = isDarkMode ? 'dark' : 'light';
-
-    // Save all settings
+    // Save preset settings
     await chrome.storage.local.set({
-      presets,
-      notificationsEnabled,
-      theme: newTheme
+      presets
     });
 
     // Update UI
     updatePresetButtons(presets);
-    await setTheme(newTheme);
-
-    // Update notification status in background
-    chrome.runtime.sendMessage({
-      action: 'setNotificationEnabled',
-      enabled: notificationsEnabled
-    });
-
-    // Update theme in background
-    chrome.runtime.sendMessage({
-      action: 'themeChanged',
-      theme: newTheme
-    });
 
     closePresetModal();
 
   } catch (error) {
-    console.error('Error saving settings:', error);
-    alert('Failed to save settings. Please try again.');
+    console.error('Error saving preset settings:', error);
+    alert('Failed to save preset settings. Please try again.');
   }
 }
 

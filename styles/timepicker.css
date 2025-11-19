@@ -41,7 +41,7 @@
 .modal-footer {
     display: flex;
     justify-content: center;
-    padding: 8px 0 4px;
+    padding: 8px 12px 4px 12px;
     border-top: none;
     gap: 10px;
 }

@@ -157,15 +157,73 @@ async function initializeUI() {
       throw new Error('One or more critical elements are missing');
     }
 
-    if (elements.timerDisplay) {
-      elements.timerDisplay.addEventListener('click', () => {
-        try {
-          timePickerModal.open(elements.timerDisplay.textContent);
-        } catch (err) {
-          console.error('Error opening time picker:', err);
-        }
-      });
+    // Function to start editing time
+    function startEditingTime() {
+      if (timerState.isRunning) return;
+
+      elements.timerDisplay.classList.add('hidden');
+      elements.totalTimeInput.classList.add('editing');
+      elements.totalTimeInput.value = elements.timerDisplay.textContent;
+      elements.totalTimeInput.focus();
+      elements.totalTimeInput.select();
     }
+
+    // Function to stop editing time
+    function stopEditingTime() {
+      const timerDisplay = document.getElementById('timerDisplay');
+      const totalTimeInput = document.getElementById('total-time');
+
+      if (!timerDisplay || !totalTimeInput) return;
+
+      timerDisplay.classList.remove('hidden');
+      totalTimeInput.classList.remove('editing');
+
+      // Ensure proper format HH:MM:SS
+      let value = totalTimeInput.value.replace(/[^0-9]/g, '');
+      value = value.padStart(6, '0').slice(0, 6);
+      const formatted = `${value.slice(0, 2)}:${value.slice(2, 4)}:${value.slice(4, 6)}`;
+
+      // Update both input and display
+      totalTimeInput.value = formatted;
+      timerDisplay.textContent = formatted;
+
+      // Save the time
+      const hours = parseInt(value.slice(0, 2), 10);
+      const minutes = parseInt(value.slice(2, 4), 10);
+      const seconds = parseInt(value.slice(4, 6), 10);
+      const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+      timerState.targetMinutes = Math.ceil(totalSeconds / 60);
+      chrome.storage.local.set({ targetMinutes: timerState.targetMinutes });
+    }
+
+    if (elements.timerDisplay) {
+      elements.timerDisplay.addEventListener('click', startEditingTime);
+    }
+
+    // Global keyboard handler - start editing on any key press in IDLE state
+    document.addEventListener('keydown', (e) => {
+      if (timerState.isRunning) return;
+
+      const timerDisplay = document.getElementById('timerDisplay');
+      const totalTimeInput = document.getElementById('total-time');
+
+      if (!timerDisplay || !totalTimeInput) return;
+      if (totalTimeInput.classList.contains('editing')) return; // Already editing
+      if (!timerDisplay.classList.contains('clickable')) return; // Not in IDLE state
+
+      // Start editing on number keys, backspace, delete
+      if ((e.key >= '0' && e.key <= '9') || e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        startEditingTime();
+
+        // If it's backspace/delete, clear the input
+        if (e.key === 'Backspace' || e.key === 'Delete') {
+          setTimeout(() => {
+            totalTimeInput.value = '';
+          }, 0);
+        }
+      }
+    });
 
     return elements;
   } catch (err) {
@@ -265,105 +323,6 @@ function setupEventListeners(elements) {
         return;
     }
 
-    let isDragging = false;
-    let startY = 0;
-    let selectedPart = '';
-    let selectedStart = 0;
-    let originalValue = 0;
-
-    totalTimeInput.addEventListener('click', (e) => {
-        const pos = e.target.selectionStart;
-        if (pos <= 2) {
-            selectedPart = 'hours';
-            selectedStart = 0;
-        } else if (pos <= 5) {
-            selectedPart = 'minutes';
-            selectedStart = 3;
-        } else {
-            selectedPart = 'seconds';
-            selectedStart = 6;
-        }
-        e.target.setSelectionRange(selectedStart, selectedStart + 2);
-    });
-
-    totalTimeInput.addEventListener('mousedown', (e) => {
-        if (timerState.isRunning) return;
-        
-        isDragging = true;
-        startY = e.clientY;
-        const [hours, minutes, seconds] = totalTimeInput.value.split(':').map(Number);
-        
-        switch(selectedPart) {
-            case 'hours': originalValue = hours; break;
-            case 'minutes': originalValue = minutes; break;
-            case 'seconds': originalValue = seconds; break;
-        }
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        if (!isDragging || timerState.isRunning) return;
-        
-        const delta = Math.round((startY - e.clientY) / 5);
-        let newValue = originalValue + delta;
-        const [hours, minutes, seconds] = totalTimeInput.value.split(':').map(Number);
-        
-        switch(selectedPart) {
-            case 'hours':
-                newValue = Math.min(Math.max(newValue, 0), 23);
-                totalTimeInput.value = formatTime(newValue * 3600 + minutes * 60 + seconds);
-                break;
-            case 'minutes':
-                newValue = Math.min(Math.max(newValue, 0), 59);
-                totalTimeInput.value = formatTime(hours * 3600 + newValue * 60 + seconds);
-                break;
-            case 'seconds':
-                newValue = Math.min(Math.max(newValue, 0), 59);
-                totalTimeInput.value = formatTime(hours * 3600 + minutes * 60 + newValue);
-                break;
-        }
-        totalTimeInput.setSelectionRange(selectedStart, selectedStart + 2);
-    });
-
-    document.addEventListener('mouseup', () => {
-        if (!isDragging) return;
-        isDragging = false;
-        const [hours, minutes, seconds] = totalTimeInput.value.split(':').map(Number);
-        const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-        timerState.targetMinutes = Math.ceil(totalSeconds / 60);
-        chrome.storage.local.set({ targetMinutes: timerState.targetMinutes });
-    });
-
-    totalTimeInput.addEventListener('keydown', (e) => {
-        if (timerState.isRunning) return;
-        
-        if (e.key >= '0' && e.key <= '9') {
-            e.preventDefault();
-            const [hours, minutes, seconds] = totalTimeInput.value.split(':').map(Number);
-            let newValue = parseInt(e.key);
-            
-            switch(selectedPart) {
-                case 'hours':
-                    totalTimeInput.value = formatTime(newValue * 3600 + minutes * 60 + seconds);
-                    break;
-                case 'minutes':
-                    totalTimeInput.value = formatTime(hours * 3600 + newValue * 60 + seconds);
-                    break;
-                case 'seconds':
-                    totalTimeInput.value = formatTime(hours * 3600 + minutes * 60 + newValue);
-                    break;
-            }
-            totalTimeInput.setSelectionRange(selectedStart, selectedStart + 2);
-        }
-        
-        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-            e.preventDefault();
-            selectedStart = e.key === 'ArrowLeft' ? 
-                (selectedStart === 0 ? 6 : selectedStart - 3) : 
-                (selectedStart === 6 ? 0 : selectedStart + 3);
-            selectedPart = selectedStart === 0 ? 'hours' : selectedStart === 3 ? 'minutes' : 'seconds';
-            totalTimeInput.setSelectionRange(selectedStart, selectedStart + 2);
-        }
-    });
 
     const timeSlider = document.getElementById('time-slider');
     if (timeSlider) {
@@ -381,13 +340,56 @@ function setupEventListeners(elements) {
         });
     }
 
-    if (totalTimeInput) {
-        totalTimeInput.addEventListener('click', function(e) {
-            if (!timerState.isRunning && window.timePickerModal) {
-                window.timePickerModal.open(this.value);
-            }
-        });
-    }
+    // Handle blur event to stop editing
+    totalTimeInput.addEventListener('blur', () => {
+        const timerDisplay = document.getElementById('timerDisplay');
+        if (timerDisplay) {
+            stopEditingTime();
+        }
+    });
+
+    // Handle input validation and formatting with auto-colon insertion
+    totalTimeInput.addEventListener('input', (e) => {
+        const input = e.target;
+        const cursorPos = input.selectionStart;
+        const oldValue = input.value;
+
+        // Get only digits
+        let digits = oldValue.replace(/[^0-9]/g, '');
+
+        // Limit to 6 digits
+        if (digits.length > 6) {
+            digits = digits.slice(0, 6);
+        }
+
+        // Format with colons
+        let formatted = '';
+        for (let i = 0; i < digits.length; i++) {
+            if (i === 2 || i === 4) formatted += ':';
+            formatted += digits[i];
+        }
+
+        // Update value
+        input.value = formatted;
+
+        // Calculate new cursor position
+        let newCursorPos = cursorPos;
+        const digitsBeforeCursor = oldValue.slice(0, cursorPos).replace(/[^0-9]/g, '').length;
+        const formattedBeforeCursor = formatted.split('').slice(0, formatted.length).filter((char, idx) => {
+            const digitsSoFar = formatted.slice(0, idx + 1).replace(/[^0-9]/g, '').length;
+            return digitsSoFar <= digitsBeforeCursor;
+        }).length;
+
+        input.setSelectionRange(formattedBeforeCursor, formattedBeforeCursor);
+    });
+
+    // Handle Enter key to finish editing
+    totalTimeInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === 'Escape') {
+            e.preventDefault();
+            totalTimeInput.blur();
+        }
+    });
 
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.action === 'timeSelected') {
@@ -884,9 +886,10 @@ function formatTime(seconds) {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
+
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
+
 
 function setupPresetInputs() {
   const presetInputs = document.querySelectorAll('.preset-edit .time-input-wrapper .main-input');

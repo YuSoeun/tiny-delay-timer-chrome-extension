@@ -44,10 +44,17 @@
   opacity: 0.3;
 }
 
-/* Smooth transitions for theme switching */
+/* Smooth transitions for overall interaction */
 body, .status-card, .btn-main, .notification-btn, .dark-mode-btn, .settings-btn,
-.preset-btn, .modal-content, .completion-modal-content {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+.preset-btn, .modal-content, .completion-modal-content, .timer-controls button,
+.custom-time-btn {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Specific transition timing for interactive elements */
+button, .clickable {
+  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease,
+              background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
 
 body {
@@ -212,7 +219,11 @@ body::after {
 }
 
 #timerDisplay {
-  width: 160px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   font-size: 32px;
   font-weight: 600;
   font-family: 'SF Mono', 'Consolas', monospace;
@@ -220,7 +231,16 @@ body::after {
   letter-spacing: -0.5px;
   text-align: center;
   color: var(--primary-color);
-  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  transition: none;
+}
+
+#timerDisplay.hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Timer interface components */
@@ -388,20 +408,41 @@ body::after {
   display: none;
 }
 
-#total-time {
+.time-display-container {
+  position: relative;
   width: 160px;
-  height: 28px;
-  padding: 0 4px;
-  font-size: 36px;
+  height: 36px;
+  margin: 0 auto;
+}
+
+#total-time {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  font-size: 32px;
   font-family: 'SF Mono', 'Consolas', monospace;
   font-weight: 600;
-  color: var(--text-primary);
+  font-feature-settings: "tnum";
+  color: var(--primary-color);
   background: transparent;
   border: none;
   text-align: center;
   letter-spacing: -0.5px;
   caret-color: var(--primary-color);
-  cursor: default;
+  cursor: text;
+  opacity: 0;
+  pointer-events: none;
+  outline: none;
+  z-index: 5;
+  transition: none;
+}
+
+#total-time.editing {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 #total-time::-webkit-inner-spin-button,
@@ -413,7 +454,7 @@ body::after {
 #total-time:focus {
   outline: none;
   color: var(--primary-color);
-  animation: blink 1s step-end infinite;
+  animation: blink 0.5s step-end infinite;
 }
 
 @keyframes blink {
@@ -689,7 +730,6 @@ input[type="number"]:focus {
 
 .timer-display.clickable {
   cursor: pointer;
-  transition: opacity 0.2s ease;
 }
 
 .timer-display.clickable:hover {
@@ -708,11 +748,11 @@ input[type="number"]:focus {
   height: 1em;
   background-color: var(--primary-color);
   margin-left: 4px;
-  animation: blink 1s infinite;
+  animation: cursorBlink 0.5s infinite;
   vertical-align: baseline;
 }
 
-@keyframes blink {
+@keyframes cursorBlink {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0; }
 }
@@ -754,6 +794,16 @@ input[type="number"]:focus {
   max-height: 320px;
   padding: 0;
   margin: 0;
+  transform: scale(0.9) translateY(20px);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.3s ease, box-shadow 0.3s ease;
+}
+
+.modal.show .modal-content {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
 }
 
 /* General Settings Modal */
@@ -828,11 +878,15 @@ input[type="number"]:focus {
 }
 
 .large-timer {
-  font-size: 50px;
-  font-weight: 700;
-  padding: 12px 0 20px;
-  letter-spacing: -0.8px;
+  font-size: 32px;
+  font-weight: 600;
+  padding: 0;
+  letter-spacing: -0.5px;
   color: var(--text-primary);
+  margin: 0 auto;
+  width: 160px;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-feature-settings: "tnum";
 }
 
 /* Timer Completion Notification Modal Styles */

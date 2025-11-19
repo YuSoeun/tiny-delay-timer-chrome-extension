@@ -22,7 +22,14 @@
   background: var(--primary-color);
   color: white;
   border-color: var(--primary-color);
-  box-shadow: 0 3px 8px rgba(138, 123, 255, 0.25);
+  box-shadow: 0 4px 12px rgba(138, 123, 255, 0.3);
+  transform: translateY(-1px) scale(1.02);
+}
+
+.preset-btn:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 6px rgba(138, 123, 255, 0.4);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
 /* Custom time button */
@@ -48,8 +55,14 @@
   background: var(--success-color);
   color: white;
   border-color: var(--success-color);
-  box-shadow: 0 3px 8px rgba(109, 213, 181, 0.25);
-  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(109, 213, 181, 0.3);
+  transform: translateY(-1px) scale(1.05);
+}
+
+.custom-time-btn:active {
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 2px 6px rgba(109, 213, 181, 0.4);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
 .custom-time-btn i {
@@ -75,6 +88,14 @@
   background: var(--primary-color);
   color: white;
   border-color: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(138, 123, 255, 0.3);
+  transform: translateY(-1px) scale(1.05);
+}
+
+.settings-btn:active {
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 2px 6px rgba(138, 123, 255, 0.4);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
 /* Preset Control Layout */
@@ -100,16 +121,18 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(51, 51, 68, 0.6);
-  backdrop-filter: blur(4px);
+  background: rgba(51, 51, 68, 0);
+  backdrop-filter: blur(0px);
   z-index: 1000;
   justify-content: center;
   align-items: center;
+  transition: background 0.3s ease, backdrop-filter 0.3s ease;
 }
 
 .modal.show {
   display: flex;
-  animation: none;
+  background: rgba(51, 51, 68, 0.6);
+  backdrop-filter: blur(4px);
 }
 
 /* Preset Modal */
@@ -123,6 +146,17 @@
   max-height: 320px;
   padding: 0;
   margin: 0;
+  transform: scale(0.9) translateY(20px);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.3s ease, box-shadow 0.3s ease;
+}
+
+.modal.show #presetModal .modal-content,
+#presetModal.show .modal-content {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
 }
 
 #presetModal .modal-header {
@@ -153,12 +187,12 @@
 .header-buttons {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
 /* Small primary button */
 .btn-small {
-  padding: 3px 8px;
+  padding: 3px 6px;
   font-size: 11px;
   border-radius: 6px;
   white-space: nowrap;

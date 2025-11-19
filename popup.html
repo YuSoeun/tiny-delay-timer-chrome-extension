@@ -55,11 +55,12 @@
 
     <!-- Main Card: Timer Information and Controls -->
     <div class="status-card main-card">
-      <input type="text" id="total-time" value="00:30:00" class="hidden-input">
-      
       <!-- Timer Display - Only visible in IDLE state -->
       <div id="idle-state" class="timer-state active">
-        <div class="timer-display clickable large-timer" id="timerDisplay">00:30:00</div>
+        <div class="time-display-container">
+          <input type="text" id="total-time" value="00:30:00" maxlength="8">
+          <div class="timer-display clickable large-timer" id="timerDisplay">00:30:00</div>
+        </div>
       </div>
       
       <!-- Information displayed only during running or paused states -->

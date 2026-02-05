@@ -27,6 +27,50 @@ let timerState = {
     activeTargetMinutes: 30
 };
 
+// Function to start editing time (moved to global scope)
+function startEditingTime() {
+  if (timerState.isRunning) return;
+
+  const timerDisplay = document.getElementById('timerDisplay');
+  const totalTimeInput = document.getElementById('total-time');
+
+  if (!timerDisplay || !totalTimeInput) return;
+
+  timerDisplay.classList.add('hidden');
+  totalTimeInput.classList.add('editing');
+  totalTimeInput.value = timerDisplay.textContent;
+  totalTimeInput.focus();
+  totalTimeInput.select();
+}
+
+// Function to stop editing time (moved to global scope)
+function stopEditingTime() {
+  const timerDisplay = document.getElementById('timerDisplay');
+  const totalTimeInput = document.getElementById('total-time');
+
+  if (!timerDisplay || !totalTimeInput) return;
+
+  timerDisplay.classList.remove('hidden');
+  totalTimeInput.classList.remove('editing');
+
+  // Ensure proper format HH:MM:SS
+  let value = totalTimeInput.value.replace(/[^0-9]/g, '');
+  value = value.padStart(6, '0').slice(0, 6);
+  const formatted = `${value.slice(0, 2)}:${value.slice(2, 4)}:${value.slice(4, 6)}`;
+
+  // Update both input and display
+  totalTimeInput.value = formatted;
+  timerDisplay.textContent = formatted;
+
+  // Save the time
+  const hours = parseInt(value.slice(0, 2), 10);
+  const minutes = parseInt(value.slice(2, 4), 10);
+  const seconds = parseInt(value.slice(4, 6), 10);
+  const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+  timerState.targetMinutes = Math.ceil(totalSeconds / 60);
+  chrome.storage.local.set({ targetMinutes: timerState.targetMinutes });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     sendCssVariablesToBackground();
@@ -157,45 +201,7 @@ async function initializeUI() {
       throw new Error('One or more critical elements are missing');
     }
 
-    // Function to start editing time
-    function startEditingTime() {
-      if (timerState.isRunning) return;
-
-      elements.timerDisplay.classList.add('hidden');
-      elements.totalTimeInput.classList.add('editing');
-      elements.totalTimeInput.value = elements.timerDisplay.textContent;
-      elements.totalTimeInput.focus();
-      elements.totalTimeInput.select();
-    }
-
-    // Function to stop editing time
-    function stopEditingTime() {
-      const timerDisplay = document.getElementById('timerDisplay');
-      const totalTimeInput = document.getElementById('total-time');
-
-      if (!timerDisplay || !totalTimeInput) return;
-
-      timerDisplay.classList.remove('hidden');
-      totalTimeInput.classList.remove('editing');
-
-      // Ensure proper format HH:MM:SS
-      let value = totalTimeInput.value.replace(/[^0-9]/g, '');
-      value = value.padStart(6, '0').slice(0, 6);
-      const formatted = `${value.slice(0, 2)}:${value.slice(2, 4)}:${value.slice(4, 6)}`;
-
-      // Update both input and display
-      totalTimeInput.value = formatted;
-      timerDisplay.textContent = formatted;
-
-      // Save the time
-      const hours = parseInt(value.slice(0, 2), 10);
-      const minutes = parseInt(value.slice(2, 4), 10);
-      const seconds = parseInt(value.slice(4, 6), 10);
-      const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-      timerState.targetMinutes = Math.ceil(totalSeconds / 60);
-      chrome.storage.local.set({ targetMinutes: timerState.targetMinutes });
-    }
-
+    // Add click event listener to start editing time
     if (elements.timerDisplay) {
       elements.timerDisplay.addEventListener('click', startEditingTime);
     }

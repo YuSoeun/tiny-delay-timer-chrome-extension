@@ -210,6 +210,14 @@ async function initializeUI() {
     document.addEventListener('keydown', (e) => {
       if (timerState.isRunning) return;
 
+      // Skip if user is typing in a modal input or any other input/textarea
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.closest('.modal') || activeEl.closest('.time-picker-modal') ||
+          (activeEl.tagName === 'INPUT' && activeEl.id !== 'total-time') ||
+          activeEl.tagName === 'TEXTAREA')) {
+        return;
+      }
+
       const timerDisplay = document.getElementById('timerDisplay');
       const totalTimeInput = document.getElementById('total-time');
 
@@ -322,6 +330,25 @@ function setupEventListeners(elements) {
             }
         });
     });
+
+    // Close modals when clicking outside modal-content (on the overlay background)
+    const generalModal = document.getElementById('generalModal');
+    if (generalModal) {
+        generalModal.addEventListener('click', (e) => {
+            if (e.target === generalModal) {
+                closeGeneralModal();
+            }
+        });
+    }
+
+    const presetModal = document.getElementById('presetModal');
+    if (presetModal) {
+        presetModal.addEventListener('click', (e) => {
+            if (e.target === presetModal) {
+                closePresetModal();
+            }
+        });
+    }
 
     const totalTimeInput = document.getElementById('total-time');
     if (!totalTimeInput) {
@@ -1057,8 +1084,6 @@ async function saveGeneralSettings() {
       action: 'themeChanged',
       theme: newTheme
     });
-
-    closeGeneralModal();
 
   } catch (error) {
     console.error('Error saving general settings:', error);

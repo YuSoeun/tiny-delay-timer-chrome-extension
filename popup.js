@@ -27,6 +27,50 @@ let timerState = {
     activeTargetMinutes: 30
 };
 
+// Function to start editing time (moved to global scope)
+function startEditingTime() {
+  if (timerState.isRunning) return;
+
+  const timerDisplay = document.getElementById('timerDisplay');
+  const totalTimeInput = document.getElementById('total-time');
+
+  if (!timerDisplay || !totalTimeInput) return;
+
+  timerDisplay.classList.add('hidden');
+  totalTimeInput.classList.add('editing');
+  totalTimeInput.value = timerDisplay.textContent;
+  totalTimeInput.focus();
+  totalTimeInput.select();
+}
+
+// Function to stop editing time (moved to global scope)
+function stopEditingTime() {
+  const timerDisplay = document.getElementById('timerDisplay');
+  const totalTimeInput = document.getElementById('total-time');
+
+  if (!timerDisplay || !totalTimeInput) return;
+
+  timerDisplay.classList.remove('hidden');
+  totalTimeInput.classList.remove('editing');
+
+  // Ensure proper format HH:MM:SS
+  let value = totalTimeInput.value.replace(/[^0-9]/g, '');
+  value = value.padStart(6, '0').slice(0, 6);
+  const formatted = `${value.slice(0, 2)}:${value.slice(2, 4)}:${value.slice(4, 6)}`;
+
+  // Update both input and display
+  totalTimeInput.value = formatted;
+  timerDisplay.textContent = formatted;
+
+  // Save the time
+  const hours = parseInt(value.slice(0, 2), 10);
+  const minutes = parseInt(value.slice(2, 4), 10);
+  const seconds = parseInt(value.slice(4, 6), 10);
+  const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+  timerState.targetMinutes = Math.ceil(totalSeconds / 60);
+  chrome.storage.local.set({ targetMinutes: timerState.targetMinutes });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     sendCssVariablesToBackground();
@@ -85,9 +129,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
 
-    // Setup notification toggle button
-    setupNotificationToggle();
-    
+    // Initialize dark mode (still needed for startup)
+    await initializeDarkMode();
+
     window.addEventListener('presetsUpdated', (event) => {
       if (event.detail && Array.isArray(event.detail)) {
         updatePresetButtons(event.detail);
@@ -157,15 +201,43 @@ async function initializeUI() {
       throw new Error('One or more critical elements are missing');
     }
 
+    // Add click event listener to start editing time
     if (elements.timerDisplay) {
-      elements.timerDisplay.addEventListener('click', () => {
-        try {
-          timePickerModal.open(elements.timerDisplay.textContent);
-        } catch (err) {
-          console.error('Error opening time picker:', err);
-        }
-      });
+      elements.timerDisplay.addEventListener('click', startEditingTime);
     }
+
+    // Global keyboard handler - start editing on any key press in IDLE state
+    document.addEventListener('keydown', (e) => {
+      if (timerState.isRunning) return;
+
+      // Skip if user is typing in a modal input or any other input/textarea
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.closest('.modal') || activeEl.closest('.time-picker-modal') ||
+          (activeEl.tagName === 'INPUT' && activeEl.id !== 'total-time') ||
+          activeEl.tagName === 'TEXTAREA')) {
+        return;
+      }
+
+      const timerDisplay = document.getElementById('timerDisplay');
+      const totalTimeInput = document.getElementById('total-time');
+
+      if (!timerDisplay || !totalTimeInput) return;
+      if (totalTimeInput.classList.contains('editing')) return; // Already editing
+      if (!timerDisplay.classList.contains('clickable')) return; // Not in IDLE state
+
+      // Start editing on number keys, backspace, delete
+      if ((e.key >= '0' && e.key <= '9') || e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        startEditingTime();
+
+        // If it's backspace/delete, clear the input
+        if (e.key === 'Backspace' || e.key === 'Delete') {
+          setTimeout(() => {
+            totalTimeInput.value = '';
+          }, 0);
+        }
+      }
+    });
 
     return elements;
   } catch (err) {
@@ -208,9 +280,18 @@ function setupEventListeners(elements) {
         });
     }
 
+    // Setup custom time button to open preset modal
+    const customTimeBtn = document.querySelector('.custom-time-btn');
+    if (customTimeBtn) {
+        customTimeBtn.addEventListener('click', () => {
+            openPresetModal();
+        });
+    }
+
+    // Setup settings button to open general modal
     const settingsBtn = document.querySelector('.settings-btn');
     if (settingsBtn) {
-        settingsBtn.addEventListener('click', openPresetModal);
+        settingsBtn.addEventListener('click', openGeneralModal);
     }
 
     const cancelPresetsBtn = document.getElementById('cancelPresets');
@@ -218,14 +299,55 @@ function setupEventListeners(elements) {
         cancelPresetsBtn.addEventListener('click', closePresetModal);
     }
     
-    const savePresetsBtn = document.getElementById('savePresets');
-    if (savePresetsBtn) {
-        savePresetsBtn.addEventListener('click', savePresetChanges);
+    // Auto-save toggles in general settings
+    const notificationToggle = document.getElementById('notificationToggle');
+    if (notificationToggle) {
+        notificationToggle.addEventListener('change', saveGeneralSettings);
     }
-    
-    const closeBtn = document.querySelector('.close-btn');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closePresetModal);
+
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('change', saveGeneralSettings);
+    }
+
+    // Preset modal event listeners
+    const savePresetBtn = document.getElementById('savePresetSettings');
+    if (savePresetBtn) {
+        savePresetBtn.addEventListener('click', savePresetSettings);
+    }
+
+    // Close button handlers for both modals
+    const closeBtns = document.querySelectorAll('.close-btn');
+    closeBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const modal = e.target.closest('.modal');
+            if (modal) {
+                if (modal.id === 'generalModal') {
+                    closeGeneralModal();
+                } else if (modal.id === 'presetModal') {
+                    closePresetModal();
+                }
+            }
+        });
+    });
+
+    // Close modals when clicking outside modal-content (on the overlay background)
+    const generalModal = document.getElementById('generalModal');
+    if (generalModal) {
+        generalModal.addEventListener('click', (e) => {
+            if (e.target === generalModal) {
+                closeGeneralModal();
+            }
+        });
+    }
+
+    const presetModal = document.getElementById('presetModal');
+    if (presetModal) {
+        presetModal.addEventListener('click', (e) => {
+            if (e.target === presetModal) {
+                closePresetModal();
+            }
+        });
     }
 
     const totalTimeInput = document.getElementById('total-time');
@@ -234,105 +356,6 @@ function setupEventListeners(elements) {
         return;
     }
 
-    let isDragging = false;
-    let startY = 0;
-    let selectedPart = '';
-    let selectedStart = 0;
-    let originalValue = 0;
-
-    totalTimeInput.addEventListener('click', (e) => {
-        const pos = e.target.selectionStart;
-        if (pos <= 2) {
-            selectedPart = 'hours';
-            selectedStart = 0;
-        } else if (pos <= 5) {
-            selectedPart = 'minutes';
-            selectedStart = 3;
-        } else {
-            selectedPart = 'seconds';
-            selectedStart = 6;
-        }
-        e.target.setSelectionRange(selectedStart, selectedStart + 2);
-    });
-
-    totalTimeInput.addEventListener('mousedown', (e) => {
-        if (timerState.isRunning) return;
-        
-        isDragging = true;
-        startY = e.clientY;
-        const [hours, minutes, seconds] = totalTimeInput.value.split(':').map(Number);
-        
-        switch(selectedPart) {
-            case 'hours': originalValue = hours; break;
-            case 'minutes': originalValue = minutes; break;
-            case 'seconds': originalValue = seconds; break;
-        }
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        if (!isDragging || timerState.isRunning) return;
-        
-        const delta = Math.round((startY - e.clientY) / 5);
-        let newValue = originalValue + delta;
-        const [hours, minutes, seconds] = totalTimeInput.value.split(':').map(Number);
-        
-        switch(selectedPart) {
-            case 'hours':
-                newValue = Math.min(Math.max(newValue, 0), 23);
-                totalTimeInput.value = formatTime(newValue * 3600 + minutes * 60 + seconds);
-                break;
-            case 'minutes':
-                newValue = Math.min(Math.max(newValue, 0), 59);
-                totalTimeInput.value = formatTime(hours * 3600 + newValue * 60 + seconds);
-                break;
-            case 'seconds':
-                newValue = Math.min(Math.max(newValue, 0), 59);
-                totalTimeInput.value = formatTime(hours * 3600 + minutes * 60 + newValue);
-                break;
-        }
-        totalTimeInput.setSelectionRange(selectedStart, selectedStart + 2);
-    });
-
-    document.addEventListener('mouseup', () => {
-        if (!isDragging) return;
-        isDragging = false;
-        const [hours, minutes, seconds] = totalTimeInput.value.split(':').map(Number);
-        const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-        timerState.targetMinutes = Math.ceil(totalSeconds / 60);
-        chrome.storage.local.set({ targetMinutes: timerState.targetMinutes });
-    });
-
-    totalTimeInput.addEventListener('keydown', (e) => {
-        if (timerState.isRunning) return;
-        
-        if (e.key >= '0' && e.key <= '9') {
-            e.preventDefault();
-            const [hours, minutes, seconds] = totalTimeInput.value.split(':').map(Number);
-            let newValue = parseInt(e.key);
-            
-            switch(selectedPart) {
-                case 'hours':
-                    totalTimeInput.value = formatTime(newValue * 3600 + minutes * 60 + seconds);
-                    break;
-                case 'minutes':
-                    totalTimeInput.value = formatTime(hours * 3600 + newValue * 60 + seconds);
-                    break;
-                case 'seconds':
-                    totalTimeInput.value = formatTime(hours * 3600 + minutes * 60 + newValue);
-                    break;
-            }
-            totalTimeInput.setSelectionRange(selectedStart, selectedStart + 2);
-        }
-        
-        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-            e.preventDefault();
-            selectedStart = e.key === 'ArrowLeft' ? 
-                (selectedStart === 0 ? 6 : selectedStart - 3) : 
-                (selectedStart === 6 ? 0 : selectedStart + 3);
-            selectedPart = selectedStart === 0 ? 'hours' : selectedStart === 3 ? 'minutes' : 'seconds';
-            totalTimeInput.setSelectionRange(selectedStart, selectedStart + 2);
-        }
-    });
 
     const timeSlider = document.getElementById('time-slider');
     if (timeSlider) {
@@ -350,13 +373,56 @@ function setupEventListeners(elements) {
         });
     }
 
-    if (totalTimeInput) {
-        totalTimeInput.addEventListener('click', function(e) {
-            if (!timerState.isRunning && window.timePickerModal) {
-                window.timePickerModal.open(this.value);
-            }
-        });
-    }
+    // Handle blur event to stop editing
+    totalTimeInput.addEventListener('blur', () => {
+        const timerDisplay = document.getElementById('timerDisplay');
+        if (timerDisplay) {
+            stopEditingTime();
+        }
+    });
+
+    // Handle input validation and formatting with auto-colon insertion
+    totalTimeInput.addEventListener('input', (e) => {
+        const input = e.target;
+        const cursorPos = input.selectionStart;
+        const oldValue = input.value;
+
+        // Get only digits
+        let digits = oldValue.replace(/[^0-9]/g, '');
+
+        // Limit to 6 digits
+        if (digits.length > 6) {
+            digits = digits.slice(0, 6);
+        }
+
+        // Format with colons
+        let formatted = '';
+        for (let i = 0; i < digits.length; i++) {
+            if (i === 2 || i === 4) formatted += ':';
+            formatted += digits[i];
+        }
+
+        // Update value
+        input.value = formatted;
+
+        // Calculate new cursor position
+        let newCursorPos = cursorPos;
+        const digitsBeforeCursor = oldValue.slice(0, cursorPos).replace(/[^0-9]/g, '').length;
+        const formattedBeforeCursor = formatted.split('').slice(0, formatted.length).filter((char, idx) => {
+            const digitsSoFar = formatted.slice(0, idx + 1).replace(/[^0-9]/g, '').length;
+            return digitsSoFar <= digitsBeforeCursor;
+        }).length;
+
+        input.setSelectionRange(formattedBeforeCursor, formattedBeforeCursor);
+    });
+
+    // Handle Enter key to finish editing
+    totalTimeInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === 'Escape') {
+            e.preventDefault();
+            totalTimeInput.blur();
+        }
+    });
 
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.action === 'timeSelected') {
@@ -386,42 +452,58 @@ function setupEventListeners(elements) {
 
 function updateTimerState(newState) {
   document.body.classList.remove('state-idle', 'state-running', 'state-paused');
-  
+
   document.body.classList.add(`state-${newState}`);
-  
+
   const idleState = document.getElementById('idle-state');
   const runningState = document.getElementById('running-state');
   const playBtn = document.getElementById('playBtn');
   const pauseBtn = document.getElementById('pauseBtn');
   const resetBtn = document.getElementById('resetBtn');
-  
+  const timerDisplay = document.getElementById('timerDisplay');
+
   [playBtn, pauseBtn, resetBtn].forEach(btn => btn.classList.remove('enabled'));
-  
+
   switch(newState) {
     case TimerState.IDLE:
       idleState.classList.add('active');
       runningState.classList.remove('active');
-      
+
       playBtn.classList.add('enabled');
+
+      // Show blinking cursor when timer is idle
+      if (timerDisplay) {
+        timerDisplay.classList.add('clickable');
+      }
       break;
-      
+
     case TimerState.RUNNING:
       idleState.classList.remove('active');
       runningState.classList.add('active');
-      
+
       pauseBtn.classList.add('enabled');
       resetBtn.classList.add('enabled');
+
+      // Hide cursor when timer is running
+      if (timerDisplay) {
+        timerDisplay.classList.remove('clickable');
+      }
       break;
-      
+
     case TimerState.PAUSED:
       idleState.classList.remove('active');
       runningState.classList.add('active');
-      
+
       playBtn.classList.add('enabled');
       resetBtn.classList.add('enabled');
+
+      // Hide cursor when timer is paused
+      if (timerDisplay) {
+        timerDisplay.classList.remove('clickable');
+      }
       break;
   }
-  
+
   currentState = newState;
 }
 
@@ -837,9 +919,10 @@ function formatTime(seconds) {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
+
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
+
 
 function setupPresetInputs() {
   const presetInputs = document.querySelectorAll('.preset-edit .time-input-wrapper .main-input');
@@ -901,31 +984,57 @@ function updateMainInputFromTimeInputs(wrapper) {
   mainInput.value = totalSeconds / 60;
 }
 
+function openGeneralModal() {
+  chrome.storage.local.get(['notificationsEnabled', 'theme'], (result) => {
+    // Load notification setting
+    const notificationToggle = document.getElementById('notificationToggle');
+    if (notificationToggle) {
+      notificationToggle.checked = result.notificationsEnabled !== false;
+    }
+
+    // Load dark mode setting
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    if (darkModeToggle) {
+      darkModeToggle.checked = result.theme === 'dark';
+    }
+
+    const modal = document.getElementById('generalModal');
+    if (modal) {
+      modal.classList.add('show');
+      setTimeout(() => {
+        const firstInput = modal.querySelector('input');
+        if (firstInput) firstInput.focus();
+      }, 300);
+    }
+  });
+}
+
 function openPresetModal() {
   chrome.storage.local.get(['presets'], (result) => {
+    // Load presets
     const presets = result.presets || [30, 41, 60];
-    
+
     document.querySelectorAll('.preset-edit').forEach((preset, index) => {
       const timeValue = presets[index] || 30;
-      
+
       const hours = Math.floor(timeValue / 60);
       const minutes = Math.floor(timeValue % 60);
       const seconds = Math.round((timeValue - Math.floor(timeValue)) * 60);
-      
+
       const hourInput = preset.querySelector('.hour-input');
       const minuteInput = preset.querySelector('.minute-input');
       const secondInput = preset.querySelector('.second-input');
       const mainInput = preset.querySelector('.main-input');
-      
+
       if (hourInput) hourInput.value = String(hours).padStart(2, '0');
       if (minuteInput) minuteInput.value = String(minutes).padStart(2, '0');
       if (secondInput) secondInput.value = String(seconds).padStart(2, '0');
       if (mainInput) mainInput.value = timeValue;
     });
-    
+
     setupPresetInputs();
   });
-  
+
   const modal = document.getElementById('presetModal');
   if (modal) {
     modal.classList.add('show');
@@ -936,40 +1045,100 @@ function openPresetModal() {
   }
 }
 
+function closeGeneralModal() {
+    document.getElementById('generalModal').classList.remove('show');
+}
+
 function closePresetModal() {
     document.getElementById('presetModal').classList.remove('show');
 }
 
-function savePresetChanges() {
-  const presets = [];
-  
-  document.querySelectorAll('.preset-edit .time-input-wrapper').forEach(wrapper => {
-    const hourInput = wrapper.querySelector('.hour-input');
-    const minuteInput = wrapper.querySelector('.minute-input');
-    const secondInput = wrapper.querySelector('.second-input');
-    
-    if (hourInput && minuteInput && secondInput) {
-      const h = parseInt(hourInput.value) || 0;
-      const m = parseInt(minuteInput.value) || 0;
-      const s = parseInt(secondInput.value) || 0;
-      
-      const totalSeconds = h * 3600 + m * 60 + s;
-      presets.push(totalSeconds / 60);
-    }
-  });
-  
-  while (presets.length < 3) {
-    presets.push(30);
-  }
-  
-  if (presets.every(val => !isNaN(val) && val > 0)) {
-    chrome.storage.local.set({ presets }, () => {
-      updatePresetButtons(presets);
-      closePresetModal();
+async function saveGeneralSettings() {
+  try {
+    // Save notification setting
+    const notificationToggle = document.getElementById('notificationToggle');
+    const notificationsEnabled = notificationToggle ? notificationToggle.checked : true;
+
+    // Save dark mode setting
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const isDarkMode = darkModeToggle ? darkModeToggle.checked : false;
+    const newTheme = isDarkMode ? 'dark' : 'light';
+
+    // Save general settings
+    await chrome.storage.local.set({
+      notificationsEnabled,
+      theme: newTheme
     });
-  } else {
-    alert('Please enter valid preset values (greater than 0).');
+
+    // Apply theme immediately
+    await setTheme(newTheme);
+
+    // Update notification status in background
+    chrome.runtime.sendMessage({
+      action: 'setNotificationEnabled',
+      enabled: notificationsEnabled
+    });
+
+    // Update theme in background
+    chrome.runtime.sendMessage({
+      action: 'themeChanged',
+      theme: newTheme
+    });
+
+  } catch (error) {
+    console.error('Error saving general settings:', error);
+    alert('Failed to save general settings. Please try again.');
   }
+}
+
+async function savePresetSettings() {
+  try {
+    // Save presets
+    const presets = [];
+
+    document.querySelectorAll('.preset-edit .time-input-wrapper').forEach(wrapper => {
+      const hourInput = wrapper.querySelector('.hour-input');
+      const minuteInput = wrapper.querySelector('.minute-input');
+      const secondInput = wrapper.querySelector('.second-input');
+
+      if (hourInput && minuteInput && secondInput) {
+        const h = parseInt(hourInput.value) || 0;
+        const m = parseInt(minuteInput.value) || 0;
+        const s = parseInt(secondInput.value) || 0;
+
+        const totalSeconds = h * 3600 + m * 60 + s;
+        presets.push(totalSeconds / 60);
+      }
+    });
+
+    while (presets.length < 3) {
+      presets.push(30);
+    }
+
+    if (!presets.every(val => !isNaN(val) && val > 0)) {
+      alert('Please enter valid preset values (greater than 0).');
+      return;
+    }
+
+    // Save preset settings
+    await chrome.storage.local.set({
+      presets
+    });
+
+    // Update UI
+    updatePresetButtons(presets);
+
+    closePresetModal();
+
+  } catch (error) {
+    console.error('Error saving preset settings:', error);
+    alert('Failed to save preset settings. Please try again.');
+  }
+}
+
+function savePresetChanges() {
+  // Keep old function for compatibility
+  saveAllSettings();
 }
 
 function updatePresetButtons(presets = [30, 41, 60]) {
@@ -1419,4 +1588,103 @@ function createVisualPulse() {
             pulseOverlay.parentNode.removeChild(pulseOverlay);
         }
     }, 1500);
+}
+
+// Dark Mode Toggle Functions
+async function setupDarkModeToggle() {
+    const darkModeBtn = document.getElementById('darkModeToggleBtn');
+
+    if (!darkModeBtn) {
+        console.error('Dark mode toggle button element not found');
+        return;
+    }
+
+    // Initialize dark mode from storage
+    await initializeDarkMode();
+
+    // Setup click event listener
+    darkModeBtn.addEventListener('click', async () => {
+        try {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            await setTheme(newTheme);
+            updateDarkModeButton(darkModeBtn, newTheme);
+
+            // Notify background script of theme change for badge updates
+            chrome.runtime.sendMessage({
+                action: 'themeChanged',
+                theme: newTheme
+            }).catch(() => {
+                // Silent fail if background script isn't ready
+            });
+
+        } catch (error) {
+            console.error('Error toggling dark mode:', error);
+        }
+    });
+}
+
+async function initializeDarkMode() {
+    try {
+        // Check if user has a saved preference
+        const result = await chrome.storage.local.get(['theme']);
+        let theme = result.theme;
+
+        // If no preference saved, detect system preference
+        if (!theme) {
+            theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        await setTheme(theme);
+
+        const darkModeBtn = document.getElementById('darkModeToggleBtn');
+        if (darkModeBtn) {
+            updateDarkModeButton(darkModeBtn, theme);
+        }
+
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', async (e) => {
+            const savedTheme = await chrome.storage.local.get(['theme']);
+            // Only auto-switch if user hasn't manually set a preference
+            if (!savedTheme.theme) {
+                const newTheme = e.matches ? 'dark' : 'light';
+                await setTheme(newTheme);
+                if (darkModeBtn) {
+                    updateDarkModeButton(darkModeBtn, newTheme);
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error initializing dark mode:', error);
+        // Fallback to light theme
+        await setTheme('light');
+    }
+}
+
+async function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // Save preference
+    await chrome.storage.local.set({ theme });
+
+    // Update CSS variables for background script
+    setTimeout(() => {
+        sendCssVariablesToBackground();
+    }, 100);
+}
+
+function updateDarkModeButton(button, theme) {
+    const icon = button.querySelector('i');
+
+    if (theme === 'dark') {
+        button.classList.add('active');
+        button.title = 'Switch to light mode';
+        icon.className = 'bi bi-sun';
+    } else {
+        button.classList.remove('active');
+        button.title = 'Switch to dark mode';
+        icon.className = 'bi bi-moon';
+    }
 }

@@ -15,19 +15,79 @@
   --card-shadow: 0 8px 16px rgba(122, 105, 230, 0.12);
 }
 
+/* Dark mode theme */
+[data-theme="dark"] {
+  --primary-color: #a89fff;
+  --primary-hover: #9d8cff;
+  --gradient-start: #d0c6ff;
+  --gradient-end: #a89fff;
+  --background: #0f0f1e;
+  --card-bg: rgba(25, 25, 45, 0.95);
+  --text-primary: #f5f5f8;
+  --text-secondary: #d0d0d8;
+  --border-color: rgba(168, 159, 255, 0.25);
+  --danger-color: #ff99b5;
+  --danger-hover: #ff85a3;
+  --success-color: #8ff0d4;
+  --shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+  --card-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+}
+
+/* Update dark mode background gradients */
+[data-theme="dark"] body::before {
+  background: linear-gradient(135deg, #3d3d5a, #2a2a4e);
+  opacity: 0.5;
+}
+
+[data-theme="dark"] body::after {
+  background: linear-gradient(135deg, #4d3a5a, #3a2a4a);
+  opacity: 0.4;
+}
+
+/* Bootstrap Icons fix */
+.bi {
+  display: inline-block;
+  font-family: "bootstrap-icons" !important;
+  font-style: normal;
+  font-weight: normal !important;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  vertical-align: -0.125em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth transitions for overall interaction */
+body, .status-card, .btn-main, .notification-btn, .dark-mode-btn, .settings-btn,
+.preset-btn, .modal-content, .completion-modal-content, .timer-controls button,
+.custom-time-btn {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Specific transition timing for interactive elements */
+button, .clickable {
+  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease,
+              background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
 body {
   font-family: 'Inter', 'SF Pro Display', 'Segoe UI', sans-serif;
   margin: 0;
+  padding: 0;
   background-color: var(--background);
   color: var(--text-primary);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  box-sizing: border-box;
+  min-height: 240px;
+  height: auto;
 }
 
 /* Background effects */
 body::before {
   content: '';
-  position: absolute;
+  position: fixed;
   width: 150px;
   height: 150px;
   border-radius: 50%;
@@ -37,11 +97,12 @@ body::before {
   z-index: -1;
   filter: blur(20px);
   opacity: 0.6;
+  pointer-events: none;
 }
 
 body::after {
   content: '';
-  position: absolute;
+  position: fixed;
   width: 120px;
   height: 120px;
   border-radius: 50%;
@@ -51,66 +112,26 @@ body::after {
   z-index: -1;
   filter: blur(20px);
   opacity: 0.5;
+  pointer-events: none;
 }
 
-.container {
-  width: 320px;
-  height: auto;
-  max-height: 210px;
-  padding: 12px 12px 0;
-  position: relative;
-  z-index: 1;
-  overflow: hidden;
-}
+/* Container moved to layout.css */
 
 .title {
   display: none;
 }
 
-/* Main card styles */
-.status-card {
-  width: 100%;
-  box-sizing: border-box;
-  background-color: var(--card-bg);
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 12px;
-  box-shadow: var(--card-shadow);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--border-color);
-}
+/* Main card styles moved to layout.css */
 
-.main-card {
-  text-align: center;
-  padding: 14px;
-}
+/* Timer display moved to timepicker.css */
 
-.timer-display {
-  margin-bottom: 20px;
-}
-
-/* Timer display styles */
-.time-display {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-family: 'SF Mono', 'Consolas', monospace;
-  margin-bottom: 16px;
-}
-
-.time-display-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: center;
-  width: 100%;
-}
+/* Timer display styles moved to timepicker.css */
 
 .time-slider {
   width: 200px;
   height: 4px;
   -webkit-appearance: none;
+  appearance: none;
   background: rgba(138, 123, 255, 0.1);
   border-radius: 2px;
   outline: none;
@@ -133,10 +154,10 @@ body::after {
   box-shadow: 0 2px 8px rgba(122, 105, 230, 0.3);
 }
 
-#total-time, 
+#total-time,
 #elapsed {
-  width: 160px;
-  font-size: 32px;
+  width: 220px;
+  font-size: 48px;
   font-weight: 600;
   font-family: 'SF Mono', 'Consolas', monospace;
   font-feature-settings: "tnum";
@@ -149,10 +170,10 @@ body::after {
 }
 
 #total-time {
-  width: 160px;
-  height: 36px;
+  width: 220px;
+  height: 52px;
   padding: 0;
-  font-size: 32px;
+  font-size: 48px;
   font-family: 'SF Mono', 'Consolas', monospace;
   font-weight: 600;
   font-feature-settings: "tnum";
@@ -177,32 +198,36 @@ body::after {
 }
 
 #timerDisplay {
-  width: 160px;
-  font-size: 32px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  font-size: 48px;
   font-weight: 600;
   font-family: 'SF Mono', 'Consolas', monospace;
   font-feature-settings: "tnum";
   letter-spacing: -0.5px;
   text-align: center;
   color: var(--primary-color);
-  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  transition: none;
 }
 
-/* Timer interface components */
-.info-row {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  padding: 0 4px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1;
+#timerDisplay.hidden {
+  opacity: 0;
+  pointer-events: none;
 }
+
+/* Timer interface components moved to timepicker.css */
 
 #total-elapsed {
   font-family: 'SF Mono', 'Consolas', monospace;
   font-feature-settings: "tnum";
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--primary-color);
 }
@@ -214,72 +239,32 @@ body::after {
 
 .delay-indicator {
   display: none;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--danger-color);
+  line-height: 1.2;
+}
+
+.delay-indicator.show {
+  display: flex;
 }
 
 .delay-indicator i {
-  display: none;
+  font-size: 11px;
+  flex-shrink: 0;
 }
 
 .delay-time {
-  display: none;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-feature-settings: "tnum";
+  font-weight: 600;
+  color: var(--danger-color);
 }
 
-.progress-bar {
-  position: relative;
-  width: 100%;
-  height: 6px;
-  background-color: rgba(138, 123, 255, 0.1);
-  border-radius: 6px;
-  overflow: hidden;
-  margin-bottom: 12px;
-}
+/* Progress bar moved to timepicker.css */
 
-.progress {
-  width: 0%;
-  height: 100%;
-  background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
-  border-radius: 6px;
-  transition: width 0.3s ease;
-}
-
-#elapsed-progress {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
-  border-radius: 6px;
-  transition: width 0.3s ease;
-}
-
-#delay-progress {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, #ffb8d9, #ff7eb5);
-  border-radius: 6px;
-  transition: width 0.3s ease;
-}
-
-.total-time-info,
-.target-time-info {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  min-width: auto;
-  height: 16px;
-}
-
-.total-time-info i,
-.target-time-info i {
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 16px;
-}
+/* Timer info styles moved to timepicker.css */
 
 #total-elapsed,
 #target-time {
@@ -294,22 +279,14 @@ body::after {
 }
 
 #delay {
-  display: none;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-feature-settings: "tnum";
+  font-weight: 600;
+  color: var(--danger-color);
+  font-size: 11px;
 }
 
-.timer-info-container {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-
-.main-controls {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 8px;
-}
+/* Timer info and main controls moved to timepicker.css */
 
 .btn-main {
   width: 36px;
@@ -353,20 +330,36 @@ body::after {
   display: none;
 }
 
+/* Time display container moved to layout.css */
+
 #total-time {
-  width: 160px;
-  height: 28px;
-  padding: 0 4px;
-  font-size: 36px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  font-size: 48px;
   font-family: 'SF Mono', 'Consolas', monospace;
   font-weight: 600;
-  color: var(--text-primary);
+  font-feature-settings: "tnum";
+  color: var(--primary-color);
   background: transparent;
   border: none;
   text-align: center;
   letter-spacing: -0.5px;
   caret-color: var(--primary-color);
-  cursor: default;
+  cursor: text;
+  opacity: 0;
+  pointer-events: none;
+  outline: none;
+  z-index: 5;
+  transition: none;
+}
+
+#total-time.editing {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 #total-time::-webkit-inner-spin-button,
@@ -378,7 +371,7 @@ body::after {
 #total-time:focus {
   outline: none;
   color: var(--primary-color);
-  animation: blink 1s step-end infinite;
+  animation: blink 0.5s step-end infinite;
 }
 
 @keyframes blink {
@@ -519,130 +512,19 @@ input[type="number"]:focus {
   font-feature-settings: "tnum";
 }
 
-.app-info {
-  display: none;
-}
+/* Hidden elements moved to layout.css */
 
-.bottom-controls {
-  display: none;
-}
+/* Setup controls moved to preset-modal.css and layout.css */
 
-.setup-controls {
-  margin: 16px 0;
-}
+/* Settings button moved to preset-modal.css */
 
-.timer-info {
-  display: none;
-}
+/* GitHub link and app footer moved to layout.css */
 
-.container.running .setup-controls {
-  display: none;
-}
+/* GitHub info moved to layout.css */
 
-.container.running .timer-info {
-  display: block;
-}
+/* Settings button hover moved to preset-modal.css */
 
-.setup-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.setup-controls .app-actions {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-}
-
-.controls-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.settings-btn {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  font-size: 14px;
-  transition: all 0.2s ease;
-  box-shadow: var(--card-shadow);
-}
-
-.app-footer {
-  display: flex;
-  justify-content: flex-end;
-  padding: 4px;
-}
-
-.github-link {
-  visibility: hidden;
-}
-
-.container.running .github-link {
-  visibility: visible;
-  position: absolute;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--text-secondary);
-  opacity: 0.7;
-  padding: 2px 4px;
-  border-radius: 4px;
-  z-index: 10;
-  right: 16px;
-  bottom: 16px;
-}
-
-.github-link i {
-  font-size: 14px;
-}
-
-.github-link a {
-  color: var(--primary-color);
-  text-decoration: none;
-}
-
-.github-info {
-  display: none;
-}
-
-.settings-btn:hover {
-  transform: translateY(-2px);
-  color: var(--primary-color);
-  box-shadow: 0 4px 8px rgba(122, 105, 230, 0.15);
-}
-
-.timer-setup {
-  width: 100%;
-  text-align: center;
-}
-
-.timer-running {
-  display: none;
-  width: 100%;
-  text-align: center;
-}
-
-.container.running .timer-setup {
-  display: none;
-}
-
-.container.running .timer-running {
-  display: block;
-}
-
-.container.running .bottom-controls {
-  display: none;
-}
+/* Timer setup and running states moved to layout.css */
 
 .clickable {
   cursor: pointer;
@@ -654,11 +536,31 @@ input[type="number"]:focus {
 
 .timer-display.clickable {
   cursor: pointer;
-  transition: opacity 0.2s ease;
 }
 
 .timer-display.clickable:hover {
   opacity: 0.8;
+}
+
+/* Blinking cursor effect for timer display */
+.timer-display.clickable {
+  position: relative;
+}
+
+.timer-display.clickable::after {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background-color: var(--primary-color);
+  margin-left: 4px;
+  animation: cursorBlink 0.5s infinite;
+  vertical-align: baseline;
+}
+
+@keyframes cursorBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
 
 .hidden-input {
@@ -689,12 +591,81 @@ input[type="number"]:focus {
 }
 
 .modal-content {
-  background-color: var(--card-bg);
-  padding: 20px;
-  border-radius: 12px;
-  width: 80%;
-  max-width: 350px;
+  width: 300px;
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   border: 1px solid var(--border-color);
+  overflow: hidden;
+  max-height: 90vh;
+  padding: 0;
+  margin: 0;
+  transform: scale(0.9) translateY(20px);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.3s ease, box-shadow 0.3s ease;
+  box-sizing: border-box;
+}
+
+.modal.show .modal-content {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* General Settings Modal */
+#generalModal .modal-header {
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(138, 123, 255, 0.1);
+  background: var(--card-bg);
+  flex-shrink: 0;
+}
+
+#generalModal .modal-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#generalModal .modal-header h3 i {
+  color: var(--primary-color);
+  font-size: 14px;
+}
+
+#generalModal .close-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+#generalModal .close-btn:hover {
+  color: var(--primary-color);
+  background: rgba(138, 123, 255, 0.1);
+}
+
+#generalModal .modal-body {
+  padding: 10px 12px;
+  background: var(--card-bg);
+  max-height: calc(90vh - 80px);
+  overflow-y: auto;
 }
 
 .preset-edit {
@@ -717,11 +688,15 @@ input[type="number"]:focus {
 }
 
 .large-timer {
-  font-size: 50px;
-  font-weight: 700;
-  padding: 12px 0 20px;
-  letter-spacing: -0.8px;
+  font-size: 48px;
+  font-weight: 600;
+  padding: 0;
+  letter-spacing: -0.5px;
   color: var(--text-primary);
+  margin: 0 auto;
+  width: 220px;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-feature-settings: "tnum";
 }
 
 /* Timer Completion Notification Modal Styles */
@@ -760,7 +735,7 @@ input[type="number"]:focus {
 .completion-modal-content {
   background: var(--card-bg);
   border-radius: 20px;
-  padding: 32px 28px;
+  padding: 32px;
   text-align: center;
   box-shadow: 0 20px 40px rgba(122, 105, 230, 0.25);
   backdrop-filter: blur(20px);
@@ -800,37 +775,44 @@ input[type="number"]:focus {
 }
 
 .completion-btn {
-  padding: 12px 24px;
-  border-radius: 12px;
+  padding: 0;
+  height: 36px;
+  border-radius: 8px;
   border: none;
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 500;
+  font-size: 13px;
   cursor: pointer;
   transition: all 0.2s ease;
   flex: 1;
   max-width: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .completion-btn.btn-primary {
   background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
   color: white;
+  box-shadow: 0 1px 3px rgba(138, 123, 255, 0.2);
 }
 
 .completion-btn.btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 16px rgba(122, 105, 230, 0.3);
+  box-shadow: 0 2px 8px rgba(138, 123, 255, 0.25);
 }
 
 .completion-btn.btn-secondary {
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--card-bg);
   color: var(--text-primary);
-  border: 1px solid rgba(138, 123, 255, 0.2);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .completion-btn.btn-secondary:hover {
-  background: rgba(255, 255, 255, 1);
+  background: var(--card-bg);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary-color);
 }
 
 @keyframes fadeIn {
@@ -889,12 +871,7 @@ input[type="number"]:focus {
 
 /* Remove old notification settings styles - no longer needed */
 
-/* Header buttons container */
-.header-buttons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+/* Header buttons moved to preset-modal.css */
 
 /* Notification toggle button - matching settings button style */
 .notification-btn {
@@ -931,6 +908,44 @@ input[type="number"]:focus {
 }
 
 .notification-btn i {
+  font-size: 14px;
+}
+
+/* Dark mode toggle button - matching notification button style */
+.dark-mode-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.dark-mode-btn:hover {
+  transform: translateY(-2px);
+  color: var(--primary-color);
+  box-shadow: 0 4px 8px rgba(122, 105, 230, 0.15);
+}
+
+.dark-mode-btn.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.dark-mode-btn.active:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(122, 105, 230, 0.25);
+}
+
+.dark-mode-btn i {
   font-size: 14px;
 }
 

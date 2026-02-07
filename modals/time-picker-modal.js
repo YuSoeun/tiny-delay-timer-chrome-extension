@@ -1,6 +1,7 @@
 export class TimePickerModal {
   constructor() {
     this.MIN_MODAL_HEIGHT = 260; // Configurable minimum modal height
+    this.previousTime = "00:30:00"; // Remember previous time
     this.initialize();
   }
 
@@ -262,7 +263,10 @@ export class TimePickerModal {
         action: 'timeSelected',
         time: timeStr
       });
-      
+
+      // Remember the selected time for next use
+      this.previousTime = timeStr;
+
       this.close();
     });
 
@@ -367,6 +371,54 @@ export class TimePickerModal {
           this.smoothScroll(this.secondContainer, index * this.itemHeight);
           this.updateActiveItem(this.secondContainer, this.selectedSecond);
         }
+      });
+    }
+
+    // Global keyboard events for the modal
+    this.handleKeyDown = (e) => {
+      if (!this.modal || this.modal.style.display !== 'block') return;
+
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.confirm();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        this.close();
+      } else if (e.key === 'Tab') {
+        // Handle tab navigation between inputs
+        const inputs = [this.hourInput, this.minuteInput, this.secondInput].filter(Boolean);
+        const activeElement = document.activeElement;
+        const currentIndex = inputs.indexOf(activeElement);
+
+        if (currentIndex >= 0) {
+          e.preventDefault();
+          const nextIndex = e.shiftKey ?
+            (currentIndex - 1 + inputs.length) % inputs.length :
+            (currentIndex + 1) % inputs.length;
+          inputs[nextIndex].focus();
+          inputs[nextIndex].select();
+        }
+      }
+    };
+
+    // Mouse wheel support for scroll containers
+    this.addMouseWheelSupport(this.hourContainer, this.hours, (value) => {
+      this.selectedHour = value;
+      if (this.hourInput) this.hourInput.value = value;
+      this.updateActiveItem(this.hourContainer, value);
+    });
+
+    this.addMouseWheelSupport(this.minuteContainer, this.minutes, (value) => {
+      this.selectedMinute = value;
+      if (this.minuteInput) this.minuteInput.value = value;
+      this.updateActiveItem(this.minuteContainer, value);
+    });
+
+    if (this.secondContainer) {
+      this.addMouseWheelSupport(this.secondContainer, this.seconds, (value) => {
+        this.selectedSecond = value;
+        if (this.secondInput) this.secondInput.value = value;
+        this.updateActiveItem(this.secondContainer, value);
       });
     }
   }
@@ -480,10 +532,13 @@ export class TimePickerModal {
     return parseInt(hour) * 3600 + parseInt(minute) * 60 + parseInt(second);
   }
 
-  open(currentTime = "00:00:00") {
+  open(currentTime) {
+    // Use current time if provided, otherwise use previous time, fallback to default
+    const timeToUse = currentTime || this.previousTime || "00:30:00";
+
     let [hours, minutes, seconds] = ["00", "00", "00"];
-    if (currentTime) {
-      const parts = currentTime.split(':');
+    if (timeToUse) {
+      const parts = timeToUse.split(':');
       hours = parts[0] || "00";
       minutes = parts[1] || "00";
       seconds = parts[2] || "00";
@@ -508,6 +563,9 @@ export class TimePickerModal {
     
     if (this.modal) {
       this.modal.style.display = 'block';
+
+      // Add keyboard event listener when modal opens
+      document.addEventListener('keydown', this.handleKeyDown);
       
       const viewportHeight = window.innerHeight;
       if (viewportHeight < 400) {
@@ -536,6 +594,14 @@ export class TimePickerModal {
         this.modalBg.classList.add('show');
       }, 10);
     }
+
+    // Auto-focus on the first input field
+    setTimeout(() => {
+      if (this.hourInput) {
+        this.hourInput.focus();
+        this.hourInput.select();
+      }
+    }, 200);
   }
 
   smoothScroll(element, position) {
@@ -582,6 +648,9 @@ export class TimePickerModal {
   }
 
   close() {
+    // Remove keyboard event listener when modal closes
+    document.removeEventListener('keydown', this.handleKeyDown);
+
     if (this.modal) {
       this.modal.classList.remove('show');
       setTimeout(() => {
@@ -837,5 +906,26 @@ export class TimePickerModal {
       }
       stopRepeating();
     });
+  }
+
+  addMouseWheelSupport(container, timeArray, updateCallback) {
+    if (!container) return;
+
+    container.addEventListener('wheel', (e) => {
+      e.preventDefault();
+
+      const delta = e.deltaY > 0 ? 30 : -30; // Scroll by one item height
+      const newScrollTop = container.scrollTop + delta;
+      container.scrollTop = newScrollTop;
+
+      this.updateSelectedTimeFromScroll(container, timeArray, updateCallback);
+    });
+  }
+
+  confirm() {
+    const confirmBtn = document.getElementById('confirmTime');
+    if (confirmBtn) {
+      confirmBtn.click();
+    }
   }
 }

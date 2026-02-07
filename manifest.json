@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Tiny Delay Timer",
-    "version": "1.0",
+    "version": "1.2",
     "description": "A tiny timer for tracking delays",
     "permissions": [
         "storage",

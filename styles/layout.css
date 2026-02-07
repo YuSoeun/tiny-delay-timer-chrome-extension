@@ -1,7 +1,8 @@
 html {
   overflow: hidden;
-  width: 344px;
-  height: 210px;
+  width: 350px;
+  min-height: 210px;
+  height: auto;
 }
 
 /* Timer state management */
@@ -10,13 +11,19 @@ html {
   opacity: 0;
   max-height: 0;
   overflow: hidden;
-  transition: opacity 0.3s ease, max-height 0.3s ease;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.3s ease;
+  transform: translateY(-10px);
+  box-sizing: border-box;
 }
 
 .timer-state.active {
   display: block;
   opacity: 1;
-  max-height: 200px;
+  max-height: none;
+  overflow: visible;
+  transform: translateY(0);
 }
 
 /* Running timer styles */
@@ -43,23 +50,27 @@ html {
 /* Center the elapsed time display */
 #elapsed {
   text-align: center;
-  font-size: 2.2rem;
+  font-size: 1.8rem;
   font-weight: 700;
   font-family: 'SF Mono', 'Consolas', monospace;
   color: var(--text-primary);
-  margin: 15px 0;
+  margin: 0 0 8px;
   letter-spacing: -0.5px;
   width: 100%;
   display: block;
+  line-height: 1.1;
 }
 
 /* Preset controls visibility management */
 .setup-controls {
   display: block;
   opacity: 1;
-  max-height: 80px;
-  overflow: hidden;
-  transition: opacity 0.3s ease, max-height 0.3s ease;
+  max-height: 100px;
+  overflow: visible;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.3s ease;
+  transform: translateY(0);
 }
 
 /* Hide setup controls when not in IDLE state */
@@ -68,32 +79,155 @@ body:not(.state-idle) .setup-controls,
   opacity: 0;
   max-height: 0;
   pointer-events: none;
+  transform: translateY(-10px);
+  overflow: hidden;
 }
 
 /* Show setup controls only in IDLE state */
 body.state-idle .setup-controls {
   opacity: 1;
-  max-height: 80px;
+  max-height: 100px;
   pointer-events: auto;
+  transform: translateY(0);
+  overflow: visible;
 }
 
 /* Control button visibility */
 .timer-controls button {
-  opacity: 0.5;
+  opacity: 0.4;
   pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.3s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.2s ease;
+  filter: grayscale(0.3);
 }
 
 .timer-controls button.enabled {
   opacity: 1;
   pointer-events: auto;
   cursor: pointer;
+  filter: grayscale(0);
 }
 
 .timer-controls button.enabled:hover {
-  transform: scale(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(138, 123, 255, 0.25);
 }
 
 .timer-controls button.enabled:active {
-  transform: scale(0.95);
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(138, 123, 255, 0.3);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+/* Container and main layout */
+.container {
+  width: 100%;
+  height: auto;
+  min-height: 210px;
+  padding: 12px;
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+/* Main card styles */
+.status-card {
+  width: 100%;
+  box-sizing: border-box;
+  background-color: var(--card-bg);
+  border-radius: 16px;
+  padding: 24px 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  overflow: visible;
+}
+
+.main-card {
+  text-align: center;
+  padding: 24px 16px;
+}
+
+/* Timer display container */
+.time-display-container {
+  position: relative;
+  width: 220px;
+  min-height: 52px;
+  height: auto;
+  margin: 0 auto 18px;
+  box-sizing: border-box;
+}
+
+/* GitHub link positioning */
+.github-link {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  padding: 2px 4px;
+  border-radius: 4px;
+  margin: 0;
+  text-align: center;
+}
+
+.container.running .github-link {
+  display: flex;
+}
+
+.github-link i {
+  font-size: 14px;
+}
+
+.github-link a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+/* App footer */
+.app-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 2px;
+}
+
+/* Timer setup and running states */
+.timer-setup {
+  width: 100%;
+  text-align: center;
+}
+
+.timer-running {
+  display: none;
+  width: 100%;
+  text-align: center;
+}
+
+.container.running .timer-setup {
+  display: none;
+}
+
+.container.running .timer-running {
+  display: block;
+}
+
+.container.running .bottom-controls {
+  display: none;
+}
+
+/* Hidden elements */
+.app-info {
+  display: none;
+}
+
+.bottom-controls {
+  display: none;
+}
+
+.github-info {
+  display: none;
 }

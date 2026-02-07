@@ -129,6 +129,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         } else if (message.action === 'dismissNotifications') {
             stopRepeatNotifications();
             sendResponse({ success: true });
+        } else if (message.action === 'themeChanged') {
+            // Update badge colors based on theme
+            updateBadgeColorsForTheme(message.theme);
+            sendResponse({ success: true });
         } else {
             sendResponse({ success: false, error: "Unknown action" });
         }
@@ -187,7 +191,8 @@ async function loadState() {
             'timerStatus',  // Explicit timer state flag
             'targetMinutes', // Default target time
             'notificationsEnabled',
-            'hasTriggeredCompletion'
+            'hasTriggeredCompletion',
+            'theme'
         ]);
 
         console.log('Loaded state:', state);
@@ -204,6 +209,11 @@ async function loadState() {
         // Load notification settings
         if (state.notificationsEnabled !== undefined) {
             timerState.notificationsEnabled = state.notificationsEnabled;
+        }
+
+        // Load theme settings and update badge colors
+        if (state.theme) {
+            updateBadgeColorsForTheme(state.theme);
         }
 
         // Load completion state
@@ -760,5 +770,23 @@ function updateBadge() {
         chrome.action.setBadgeBackgroundColor({ color: badgeColor });
     } catch (error) {
         console.error('Failed to update badge:', error);
+    }
+}
+
+// Theme support for badge colors
+function updateBadgeColorsForTheme(theme) {
+    if (theme === 'dark') {
+        primaryColor = '#9d8cff';
+        dangerColor = '#ff85a3';
+    } else {
+        primaryColor = '#8a7bff';
+        dangerColor = '#ff7eb5';
+    }
+
+    console.log(`Badge colors updated for ${theme} theme:`, {primaryColor, dangerColor});
+
+    // Update current badge if timer is active
+    if (timerState.isRunning || timerState.pausedTime) {
+        updateBadge();
     }
 }

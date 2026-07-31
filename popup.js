@@ -1236,7 +1236,8 @@ function isValidTime(timeStr) {
     if (hours < 0 || hours > 23) return false;
     if (minutes < 0 || minutes >= 60) return false;
     if (seconds < 0 || seconds >= 60) return false;
-    
+    if (hours === 0 && minutes === 0 && seconds === 0) return false;
+
     return true;
 }
 

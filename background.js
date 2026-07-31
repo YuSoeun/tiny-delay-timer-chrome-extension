@@ -37,7 +37,7 @@ getCssVariables();
 
 const timerState = {
     startTime: null,
-    isRunning: false,
+    isRunning: false, 
     pausedTime: null,
     activeTargetMinutes: 30,
     intervalId: null,
@@ -81,6 +81,7 @@ chrome.notifications.onClosed.addListener((notificationId, byUser) => {
 
 // Message handler for timer actions
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    let isAsyncResponse = false;
     try {
         if (message.action === 'updateCssVariables') {
             if (message.primaryColor) primaryColor = message.primaryColor;
@@ -91,6 +92,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             const result = startTimer(message.targetMinutes);
             sendResponse({ success: result });
         } else if (message.action === 'resumeTimer') {
+            isAsyncResponse = true;
             resumeTimer(message.elapsedAtPause, (result) => {
                 sendResponse({ success: result });
             });
@@ -141,8 +143,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: false, error: error.message });
     }
     
-    // Always return false to indicate we're not using sendResponse asynchronously
-    return false;
+    // Keep the message channel open only for actions that respond asynchronously (e.g. resumeTimer)
+    return isAsyncResponse;
 });
 
 // Separated into its own function for synchronous call in message handler

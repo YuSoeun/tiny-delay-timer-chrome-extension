@@ -36,7 +36,7 @@ It's a personal timer, made simple and useful. Hope it helps you too.
 2. After installing, click the timer icon on your Chrome toolbar
 
 3. Set your target time using one of these methods:
-   - Click the time presets (30min, 41min, 60min)
+   - Click the time presets (30min, 45min, 60min)
    - Click on the time display to open the time picker
    - Edit time presets by clicking the settings icon
 
@@ -93,9 +93,6 @@ boj-delay-timer-chrome-extension/
 │   ├── layout.css        # Layout styling
 │   ├── preset-modal.css  # Preset editor modal styling
 │   └── timepicker.css    # Time picker styling
-├── modals/               # Modal component modules
-│   ├── preset-modal.js   # Preset editor functionality
-│   └── time-picker-modal.js  # Time picker functionality
 └── icons/                # Toolbar icons
 ```
 

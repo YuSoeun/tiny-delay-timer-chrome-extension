@@ -26,33 +26,6 @@
       </div>
     </div>
 
-    <!-- Time Picker Background -->
-    <div id="timePickerBackground" class="modal-background"></div>
-
-    <!-- Time Picker Modal -->
-    <div id="timePickerModal" class="time-picker-modal">
-      <div class="modal-header">
-        <div class="input-group">
-          <input id="hourInput" type="number" min="0" max="23" value="00">
-          <span class="time-separator">:</span>
-          <input id="minuteInput" type="number" min="0" max="59" value="00">
-          <span class="time-separator">:</span>
-          <input id="secondInput" type="number" min="0" max="59" value="00">
-        </div>
-      </div>
-      <div class="time-picker-container">
-        <div class="scroll-container" id="hourContainer"></div>
-        <span class="time-separator">:</span>
-        <div class="scroll-container" id="minuteContainer"></div>
-        <span class="time-separator">:</span>
-        <div class="scroll-container" id="secondContainer"></div>
-        <div class="selection-overlay"></div>
-      </div>
-      <div class="modal-footer">
-        <button id="confirmTime" class="btn-primary">Confirm</button>
-      </div>
-    </div>
-
     <!-- Main Card: Timer Information and Controls -->
     <div class="status-card main-card">
       <!-- Timer Display - Only visible in IDLE state -->
@@ -111,7 +84,7 @@
       <div class="controls-row">
         <div class="preset-buttons">
           <button class="preset-btn" data-time="30">00:30:00</button>
-          <button class="preset-btn" data-time="41">00:45:00</button>
+          <button class="preset-btn" data-time="45">00:45:00</button>
           <button class="preset-btn" data-time="60">01:00:00</button>
         </div>
         <div class="header-buttons">
@@ -200,11 +173,11 @@
                 <div class="numeric-inputs">
                   <input type="number" class="hour-input" min="0" max="23" value="00">
                   <span class="time-separator">:</span>
-                  <input type="number" class="minute-input" min="0" max="59" value="41">
+                  <input type="number" class="minute-input" min="0" max="59" value="45">
                   <span class="time-separator">:</span>
                   <input type="number" class="second-input" min="0" max="59" value="00">
                 </div>
-                <input type="number" id="preset2" min="1" max="10800" value="41" class="main-input">
+                <input type="number" id="preset2" min="1" max="10800" value="45" class="main-input">
               </div>
             </div>
             <div class="preset-edit">

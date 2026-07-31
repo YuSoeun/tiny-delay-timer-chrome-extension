@@ -1,6 +1,3 @@
-import { PresetModal } from './modals/preset-modal.js';
-import { TimePickerModal } from './modals/time-picker-modal.js';
-
 // Helper function to format time inputs with leading zeros
 export function formatTimeInput(input) {
   const maxVal = input.classList.contains('hour-input') ? 23 : 59;
@@ -168,9 +165,6 @@ function sendCssVariablesToBackground() {
 
 async function initializeUI() {
   try {
-    const timePickerModal = new TimePickerModal();
-    window.timePickerModal = timePickerModal;
-
     const elements = {
       timerDisplay: document.getElementById('timerDisplay'),
       elapsed: document.getElementById('elapsed'),
@@ -257,10 +251,6 @@ function setupEventListeners(elements) {
         return;
     }
 
-    if (elements.targetTime) {
-        elements.targetTime.addEventListener('input', handleTargetTimeChange);
-    }
-    
     if (elements.playBtn) {
         elements.playBtn.addEventListener('click', handleStart);
     }
@@ -1136,11 +1126,6 @@ async function savePresetSettings() {
   }
 }
 
-function savePresetChanges() {
-  // Keep old function for compatibility
-  saveAllSettings();
-}
-
 function updatePresetButtons(presets = [30, 41, 60]) {
     if (!Array.isArray(presets) || presets.length !== 3) {
         presets = [30, 41, 60];
@@ -1154,58 +1139,6 @@ function updatePresetButtons(presets = [30, 41, 60]) {
         
         button.textContent = formatTime(totalSeconds);
         button.dataset.time = timeValue;
-    });
-}
-
-function setupTimerSlider() {
-    const modal = document.getElementById('timerSliderModal');
-    const modalBackground = document.getElementById('timerSliderBackground');
-    const timerSlider = document.getElementById('timerSlider');
-    const timerTime = document.getElementById('timerTime');
-    const modalHeader = document.getElementById('timerSliderHeader');
-    let isDragging = false;
-    let offsetX, offsetY;
-
-    modalHeader.addEventListener('mousedown', function(e) {
-        isDragging = true;
-        offsetX = e.clientX - modal.offsetLeft;
-        offsetY = e.clientY - modal.offsetTop;
-        modal.style.cursor = 'move';
-    });
-
-    document.addEventListener('mousemove', function(e) {
-        if (isDragging) {
-            modal.style.left = e.clientX - offsetX + 'px';
-            modal.style.top = e.clientY - offsetY + 'px';
-        }
-    });
-
-    document.addEventListener('mouseup', function() {
-        isDragging = false;
-        modal.style.cursor = 'default';
-    });
-
-    timerSlider.addEventListener('input', function() {
-        const totalSeconds = parseInt(timerSlider.value);
-        timerTime.textContent = formatTime(totalSeconds);
-        document.getElementById('total-time').value = formatTime(totalSeconds);
-    });
-
-    modalBackground.addEventListener('click', function() {
-        modal.style.display = 'none';
-        modalBackground.style.display = 'none';
-    });
-
-    document.getElementById('total-time').addEventListener('click', function(e) {
-        if (!timerState.isRunning) {
-            modal.style.display = 'block';
-            modalBackground.style.display = 'block';
-            const currentTime = this.value.split(':').map(Number);
-            const totalSeconds = currentTime[0] * 3600 + currentTime[1] * 60 + currentTime[2];
-            timerSlider.value = totalSeconds;
-            timerTime.textContent = formatTime(totalSeconds);
-            e.stopPropagation();
-        }
     });
 }
 
@@ -1236,16 +1169,9 @@ function isValidTime(timeStr) {
     if (hours < 0 || hours > 23) return false;
     if (minutes < 0 || minutes >= 60) return false;
     if (seconds < 0 || seconds >= 60) return false;
-    
-    return true;
-}
+    if (hours === 0 && minutes === 0 && seconds === 0) return false;
 
-function handleTargetTimeChange(e) {
-    const value = parseInt(e.target.value, 10);
-    if (!isNaN(value) && value > 0) {
-        timerState.targetMinutes = value;
-        chrome.storage.local.set({ targetMinutes: value });
-    }
+    return true;
 }
 
 function verifyTimerWithBackground() {
@@ -1452,95 +1378,6 @@ function playCompletionSound() {
     }
 }
 
-// Notification Toggle Button Functions
-async function setupNotificationToggle() {
-    const notificationBtn = document.getElementById('notificationToggleBtn');
-
-    if (!notificationBtn) {
-        console.error('Notification toggle button element not found');
-        return;
-    }
-
-    // Load current notification setting and update button appearance
-    await updateNotificationButtonState(notificationBtn);
-
-    // Setup click event listener
-    notificationBtn.addEventListener('click', async () => {
-        try {
-            // Get current state
-            const response = await chrome.runtime.sendMessage({
-                action: 'getNotificationStatus'
-            });
-
-            const currentState = response ? response.enabled : true;
-            const newState = !currentState;
-
-            // Update setting
-            const updateResponse = await chrome.runtime.sendMessage({
-                action: 'setNotificationEnabled',
-                enabled: newState
-            });
-
-            if (updateResponse && updateResponse.success) {
-                console.log('Notification setting toggled:', newState);
-                await updateNotificationButtonState(notificationBtn);
-                showNotificationFeedback(newState);
-            } else {
-                console.error('Failed to save notification setting');
-            }
-        } catch (error) {
-            console.error('Error updating notification setting:', error);
-        }
-    });
-}
-
-async function updateNotificationButtonState(button) {
-    try {
-        const response = await chrome.runtime.sendMessage({
-            action: 'getNotificationStatus'
-        });
-
-        const isEnabled = response ? response.enabled : true;
-        const icon = button.querySelector('i');
-
-        if (isEnabled) {
-            button.classList.add('enabled');
-            button.title = 'Notifications enabled - Click to disable';
-            icon.className = 'bi bi-bell-fill';
-        } else {
-            button.classList.remove('enabled');
-            button.title = 'Notifications disabled - Click to enable';
-            icon.className = 'bi bi-bell-slash';
-        }
-    } catch (error) {
-        console.error('Failed to load notification settings:', error);
-    }
-}
-
-function showNotificationFeedback(isEnabled) {
-    // Create a temporary feedback element
-    const feedback = document.createElement('div');
-    feedback.className = `notification-feedback ${isEnabled ? 'enabled' : 'disabled'}`;
-
-    feedback.textContent = isEnabled ?
-        '🔔 Notifications enabled' :
-        '🔕 Notifications disabled';
-
-    document.body.appendChild(feedback);
-
-    // Remove after 2 seconds
-    setTimeout(() => {
-        if (feedback.parentNode) {
-            feedback.classList.add('fade-out');
-            setTimeout(() => {
-                if (feedback.parentNode) {
-                    feedback.parentNode.removeChild(feedback);
-                }
-            }, 300);
-        }
-    }, 2000);
-}
-
 // Additional visual attention effects
 function addShakeEffect() {
     const modal = document.getElementById('completionNotificationModal');
@@ -1575,56 +1412,7 @@ function flashPageTitle() {
     }, 800);
 }
 
-function createVisualPulse() {
-    // Create a full-screen pulse overlay for extra attention
-    const pulseOverlay = document.createElement('div');
-    pulseOverlay.className = 'visual-pulse-overlay';
-
-    document.body.appendChild(pulseOverlay);
-
-    // Remove after animation
-    setTimeout(() => {
-        if (pulseOverlay.parentNode) {
-            pulseOverlay.parentNode.removeChild(pulseOverlay);
-        }
-    }, 1500);
-}
-
-// Dark Mode Toggle Functions
-async function setupDarkModeToggle() {
-    const darkModeBtn = document.getElementById('darkModeToggleBtn');
-
-    if (!darkModeBtn) {
-        console.error('Dark mode toggle button element not found');
-        return;
-    }
-
-    // Initialize dark mode from storage
-    await initializeDarkMode();
-
-    // Setup click event listener
-    darkModeBtn.addEventListener('click', async () => {
-        try {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-            await setTheme(newTheme);
-            updateDarkModeButton(darkModeBtn, newTheme);
-
-            // Notify background script of theme change for badge updates
-            chrome.runtime.sendMessage({
-                action: 'themeChanged',
-                theme: newTheme
-            }).catch(() => {
-                // Silent fail if background script isn't ready
-            });
-
-        } catch (error) {
-            console.error('Error toggling dark mode:', error);
-        }
-    });
-}
-
+// Dark Mode
 async function initializeDarkMode() {
     try {
         // Check if user has a saved preference
@@ -1638,11 +1426,6 @@ async function initializeDarkMode() {
 
         await setTheme(theme);
 
-        const darkModeBtn = document.getElementById('darkModeToggleBtn');
-        if (darkModeBtn) {
-            updateDarkModeButton(darkModeBtn, theme);
-        }
-
         // Listen for system theme changes
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', async (e) => {
             const savedTheme = await chrome.storage.local.get(['theme']);
@@ -1650,9 +1433,6 @@ async function initializeDarkMode() {
             if (!savedTheme.theme) {
                 const newTheme = e.matches ? 'dark' : 'light';
                 await setTheme(newTheme);
-                if (darkModeBtn) {
-                    updateDarkModeButton(darkModeBtn, newTheme);
-                }
             }
         });
 
@@ -1673,18 +1453,4 @@ async function setTheme(theme) {
     setTimeout(() => {
         sendCssVariablesToBackground();
     }, 100);
-}
-
-function updateDarkModeButton(button, theme) {
-    const icon = button.querySelector('i');
-
-    if (theme === 'dark') {
-        button.classList.add('active');
-        button.title = 'Switch to light mode';
-        icon.className = 'bi bi-sun';
-    } else {
-        button.classList.remove('active');
-        button.title = 'Switch to dark mode';
-        icon.className = 'bi bi-moon';
-    }
 }

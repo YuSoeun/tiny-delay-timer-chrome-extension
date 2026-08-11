@@ -72,8 +72,11 @@ It's a personal timer, made simple and useful. Hope it helps you too.
 ### Preset Settings
 ![Preset Settings](./assets/capture3.png)
 
-### Time Picker
-![Time Picker](./assets/capture4.png)
+### General Settings
+![General Settings](./assets/capture4.png)
+
+### Dark Mode
+![Dark Mode](./assets/capture6-dark-mode.png)
 
 ### Badge Display
 ![Badge Display](./assets/capture5.png)
